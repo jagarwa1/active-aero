@@ -17,7 +17,7 @@ from adafruit_servokit import ServoKit
 kit = ServoKit(channels=8)
 
 # MPU6050 setup
-MPU6050_ADDR = 0x69
+MPU6050_ADDR = 0x68
 bus = smbus2.SMBus(1)
 
 # Logging setup
@@ -26,8 +26,14 @@ logging_active = False
 
 # Initialize MPU6050
 def init_gyro_accel():
-    bus.write_byte_data(MPU6050_ADDR, 0x6B, 0)  # Wake up the MPU6050
-
+    try:
+        bus.write_byte_data(0x68, 0x6B, 0)  # try 0x68
+        MPU6050_ADDR = 0x68
+    except OSError:
+        bus.write_byte_data(0x69, 0x6B, 0)  # try 0x69
+        MPU6050_ADDR = 0x69
+    print("MPU6050_ADDR", hex(MPU6050_ADDR))
+    
 # Read raw data from MPU6050
 def read_raw_data(addr):
     high = bus.read_byte_data(MPU6050_ADDR, addr)
@@ -56,14 +62,14 @@ def set_servo_angle(angle):
     return angle
 
 # Log data to CSV
-def log_data(timestamp, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, speed, wing_angle):
+def log_data(timestamp, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, wing_angle):
     if logging_active:
         with open(log_filename, mode='a', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow([timestamp, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, speed, wing_angle])
+            writer.writerow([timestamp, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, wing_angle])
 
 # Active wing control logic
-def control_wing(curr_angle,accel_x_offset,accel_y_offset,accel_z_offset,gyro_x_offset,gyro_y_offset,gyro_z_offset):
+def control_wing(curr_angle, accel_x_offset, accel_y_offset, accel_z_offset, gyro_x_offset, gyro_y_offset, gyro_z_offset):
     accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z = get_sensor_data()
     accel_x = accel_x - accel_x_offset
     accel_y = accel_y - accel_y_offset
