@@ -240,6 +240,20 @@ def bootcal():
     print('Calibration Complete')
     time.sleep(1)
     return accel_x_offset,accel_y_offset,accel_z_offset,gyro_x_offset,gyro_y_offset,gyro_z_offset
+    
+def PriorityDefine(accel_x_offset,accel_y_offset)
+    accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z = get_sensor_data()
+    accel_x = accel_x - accel_x_offset
+    accel_y = (accel_y - accel_y_offset)*1
+    if abs(accel_x) > abs(accel_y)
+        priority = 1 # forward accel priority
+        return accel_x,accel_y,priority
+    else if abs(accel_x) < abs(accel_y)
+        priority = 0
+        return accel_x,accel_y,priority
+    
+def WingMove(accel_x,accel_y,priority)
+    
 
 # Main function
 if __name__ == "__main__":
@@ -266,22 +280,11 @@ if __name__ == "__main__":
             curr_angle = 0
             testval = 0
             while True:
+                accel_x,accely,priority = PriorityDefine(accel_x_offset,accel_y_offset)
                 new_angle = control_wing(curr_angle,accel_x_offset,accel_y_offset,accel_z_offset,gyro_x_offset,gyro_y_offset,gyro_z_offset)
                 time.sleep(.5)
                 curr_angle = new_angle
-                testval = testval + 1
-                match testval:
-                    case 10:
-                        print('Hold Car 90 degrees (driver side down)')
-                        time.sleep(5)
-                    case 20:
-                        print('Level Car')
-                        time.sleep(5)
-                    case 30:
-                        print('Hold Car 90 degrees (driver side up)')
-                        time.sleep(5)
-                    case 40:
-                        print('Test Complete')
+
                         break
     except KeyboardInterrupt:
         pass
