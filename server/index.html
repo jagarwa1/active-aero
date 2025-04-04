@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat App</title>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+</head>
+<body>
+    <h1>Chat App</h1>
+    <input type="text" id="m" />
+    <button id="s">Send</button>
+    <div id="messages"></div>
+
+    <script>
+        var socket = io();
+
+        document.getElementById('s').addEventListener("click", function(){
+            var message = document.getElementById('m').value;
+            socket.emit('message', {message: message});
+            document.getElementById('m').value = "";
+        });
+
+        socket.on('connect', function () {
+            console.log('Connected to server');
+        });
+
+        socket.on('disconnect', function () {
+            console.log('Disconnected from server');
+        });
+
+        socket.on('message', function (data) {
+            var msg = data.message;
+            document.getElementById("messages").innerHTML += "<p>" + msg + "</p>";
+        });
+    </script>
+</body>
+</html>

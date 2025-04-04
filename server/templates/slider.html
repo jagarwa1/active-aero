@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Slider Example</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Slider Value:</h1>
+    <input id="slider" type="range" min="0" max="100">
+    <p id="value-display"> Slider value: 0 </p>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
