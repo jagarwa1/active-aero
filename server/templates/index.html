@@ -44,6 +44,7 @@
         <section class="sensor-data">
             <div style="margin-top: 20px;">
                 <button onclick="calibrate()">Calibrate</button>
+                <p id="calibrationStatus"></p>
             </div>
             <h3>Sensor Data</h3>
             <div id="sensorData">Loading...</div>
@@ -145,8 +146,11 @@
 
         // calibrate button
         function calibrate() {
+            $("#calibrationStatus").text("Calibrating...");
             $.post("/calibrate", function(response) {
-                alert("Calibration complete: " + response);
+                $("#calibrationStatus").text("Calibration complete: " + response.status);
+            }).fail(function() {
+                $("#calibrationStatus").text("Calibration failed.");
             });
         }
 
@@ -173,6 +177,7 @@
         setInterval(updateSensorData, 1000);
         updateSensorData();
         loadLogs();
+        calibrate();
  
         </script>
     </body>

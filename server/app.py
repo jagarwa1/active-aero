@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import sys
-sys.path.append('/home/pi/active-aero/lib/python3.11/site-packages')
-import time
 import os
+sys.path.append(os.path.expanduser('~/active-aero/'))
+sys.path.append(os.path.expanduser('~/active-aero/lib/python3.11/site-packages'))
+import main_control as Aero
+import time
 import csv
 import threading
 import random
@@ -12,18 +14,15 @@ import smbus2
 from adafruit_servokit import ServoKit
 from datetime import datetime
 
-sys.path.append('/home/pi/active-aero/')
-import main_control as Aero
 
 # Initialize the sensor hardware
 Aero.init_gyro_accel()
 
-# Global variable to hold the latest sensor data
+# set log directory
+LOG_DIR = os.path.expanduser('~/active-aero/logs/')
 
-LOG_DIR = '/home/pi/active-aero/logs'
-
-latest_sensor_data = {}
-imu_data = {
+# set the global sensor data
+latest_sensor_data = {
     "accel_x": 0,
     "accel_y": 0,
     "accel_z": 0,
@@ -39,6 +38,8 @@ gyro_x_offset = 0
 gyro_y_offset = 0
 gyro_z_offset = 0
 
+curr_angle = 0
+
 auto_state = {
     "auto_mode": False,
     "thread": None,
@@ -50,19 +51,22 @@ auto_state = {
 def sensor_update_loop():
     global latest_sensor_data
     while True:
-        # latest_sensor_data = Aero.get_sensor_data()
-        imu_data["accel_x"] = random.randint(-16000, 16000)
-        imu_data["accel_y"] = random.randint(-16000, 16000)
-        imu_data["accel_z"] = random.randint(-16000, 16000)
-        imu_data["gyro_x"] = random.randint(-250, 250)
-        imu_data["gyro_y"] = random.randint(-250, 250)
-        imu_data["gyro_z"] = random.randint(-250, 250)
-        latest_sensor_data = imu_data
-        time.sleep(1)  # update every second
+        ax, ay, az, gx, gy, gz = Aero.get_sensor_data()
+        latest_sensor_data = {
+            "accel_x": ax - accel_x_offset,
+            "accel_y": ay - accel_y_offset,
+            "accel_z": az - accel_z_offset,
+            "gyro_x": gx - gyro_x_offset,
+            "gyro_y": gy - gyro_y_offset,
+            "gyro_z": gz - gyro_z_offset
+        }
+        time.sleep(.5)  # update every second
 
+# background thread for auto control
 def auto_mode_loop(flag):
+    global accel_x_offset, accel_y_offset, accel_z_offset, gyro_x_offset, gyro_y_offset, gyro_z_offset
+    global curr_angle
     new_angle = 0
-    curr_angle = 0
     while not flag.is_set():
         if auto_state['auto_mode']:
             accel_x,accely,priority = Aero.PriorityDefine(accel_x_offset,accel_y_offset)
@@ -80,6 +84,9 @@ def start_auto_mode_thread():
 def stop_auto_mode_thread():
     auto_state['stop_flag'].set()
     auto_state['thread'] = None
+
+def generate_log_filename():
+    return os.path.join(LOG_DIR, f"wing_data_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
 
 # ---- start flask setup ----
 app = Flask(__name__)
@@ -110,6 +117,7 @@ def set_logging():
     mode = request.form.get("logging")
     if mode == "on":
         Aero.logging_active = True
+        Aero.log_filename = generate_log_filename
         print("Logging ENABLED")
     elif mode == "off":
         Aero.logging_active = False
@@ -122,6 +130,19 @@ def set_logging():
 # get the latest sensor data
 @app.route("/sensor", methods=["GET"])
 def sensor():
+    if Aero.logging_active:
+        global latest_sensor_data
+        global curr_angle
+        Aero.log_data(
+            datetime.now().strftime('%H:%M:%S.%f'),
+            latest_sensor_data.get("accel_x"),
+            latest_sensor_data.get("accel_y"),
+            latest_sensor_data.get("accel_z"),
+            latest_sensor_data.get("gyro_x"),
+            latest_sensor_data.get("gyro_y"),
+            latest_sensor_data.get("gyro_z"),
+            curr_angle
+        )
     return jsonify(latest_sensor_data)
 
 # list the log files
@@ -160,11 +181,15 @@ def view_log_table(filename):
         <html>
         <head><title>Viewing {filename}</title></head>
         <body>
-          <h2>Contents of {filename}</h2>
-          {table_html}
+        <h2>Contents of {filename}</h2>
+        <a href="/logs/download/{filename}" download>
+            <button style="margin-bottom: 20px;">⬇ Download CSV</button>
+        </a>
+        {table_html}
         </body>
         </html>
     """)
+
 
 # set the servo angle in maual mode
 @app.route("/set_both_servos", methods=["POST"])
@@ -200,6 +225,7 @@ def set_servo_2():
 # calibrate the MPU6050
 @app.route("/calibrate", methods=["POST"])
 def calibrate():
+    global accel_x_offset, accel_y_offset, accel_z_offset, gyro_x_offset, gyro_y_offset, gyro_z_offset
     try:
         accel_x_offset, accel_y_offset, accel_z_offset, gyro_x_offset, gyro_y_offset, gyro_z_offset = Aero.bootcal()
         return jsonify({"status": "success"})

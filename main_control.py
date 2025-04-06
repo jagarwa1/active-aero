@@ -10,18 +10,20 @@ import argparse
 import RPi.GPIO as GPIO
 import smbus2
 import sys
-sys.path.append('/home/benchh1/active-aero/lib/python3.11/site-packages')
+import os
+sys.path.append(os.path.expanduser('~/active-aero/lib/python3.11/site-packages'))
 from adafruit_servokit import ServoKit
 
 # PWM servo driver setup
-# kit = ServoKit(channels=8)
+kit = ServoKit(channels=8)
 
 # MPU6050 setup
 MPU6050_ADDR = 0x68
 bus = smbus2.SMBus(1)
 
 # Logging setup
-log_filename = f"wing_data_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+LOG_DIR = os.path.expanduser('~/active-aero/logs/')
+log_filename = os.path.join(LOG_DIR, f"wing_data_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
 logging_active = False
 
 # Initialize MPU6050
@@ -32,9 +34,6 @@ def init_gyro_accel():
     except OSError:
         bus.write_byte_data(0x69, 0x6B, 0)  # try 0x69
         MPU6050_ADDR = 0x69
-    finally:
-        print("no i2c device")
-        return
     print("MPU6050_ADDR", hex(MPU6050_ADDR))
     
 # Read raw data from MPU6050
@@ -83,8 +82,16 @@ def set_servo_1(angle):
 # Log data to CSV
 def log_data(timestamp, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, wing_angle):
     if logging_active:
+        print("Logging to", log_filename)
+        
+        # check if the file exists
+        file_exists = os.path.isfile(log_filename)
+
         with open(log_filename, mode='a', newline='') as file:
             writer = csv.writer(file)
+            if not file_exists:
+                writer.writerow(["timestamp", "accel_x", "accel_y", "accel_z", "gyro_x", "gyro_y", "gyro_z", "wing_angle"])
+        
             writer.writerow([timestamp, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, wing_angle])
 
 # Active wing control logic
@@ -127,7 +134,7 @@ def control_wing(curr_angle, accel_x_offset, accel_y_offset, accel_z_offset, gyr
     return curr_angle
 
     # Update GUI and log data
-    log_data(datetime.now().strftime('%H:%M:%S.%f'), accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, speed, angle)
+    log_data(datetime.now().strftime('%H:%M:%S.%f'), accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, angle)
 
 # Read calibration parameters from CSV
 def read_cal_params(filename):
@@ -228,6 +235,7 @@ class WingControlGUI(tk.Tk):
         log_data(datetime.now().strftime('%H:%M:%S.%f'), accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, angle)
 
 def bootcal():
+    print("calibrating...")
     CalSamples = 100
     accel_x_cal = [j for j in range(CalSamples)] 
     accel_y_cal = [j for j in range(CalSamples)] 
