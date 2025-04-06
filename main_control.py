@@ -103,32 +103,32 @@ def control_wing(curr_angle, accel_x_offset, accel_y_offset, accel_z_offset, gyr
     gyro_x = gyro_x - gyro_x_offset
     gyro_y = accel_y - gyro_y_offset
     gyro_z = gyro_z - gyro_z_offset
-    print("ACCELERATION")
-    print("x " , accel_x)
-    print("y " , accel_y)
-    print("z " , accel_z)
+    # print("ACCELERATION")
+    # print("x " , accel_x)
+    # print("y " , accel_y)
+    # print("z " , accel_z)
 
-    print("\nGYROSCOPE")
-    print("x " , gyro_x)
-    print("y " , gyro_y)
-    print("z " , gyro_z)
+    # print("\nGYROSCOPE")
+    # print("x " , gyro_x)
+    # print("y " , gyro_y)
+    # print("z " , gyro_z)
 
     angle = 0
 
     # Adjust wing based on speed, acceleration, and turning
     if gyro_x < -.5:
         angle = 180  # Braking
-        print("braking: set angle to 180")
+#        print("braking: set angle to 180")
     #elif abs(gyro_y) > 30:
     #    angle = 30 if gyro_y > 0 else -30  # Cornering
     #elif speed > 5:
     #    angle = 0  # Flatten for high speeds
     else:
         angle = 90  # Neutral position
-        print("neutral position: set angle to 90")
+#        print("neutral position: set angle to 90")
 
     if curr_angle != angle:
-        print("no change in curr_angle ", curr_angle)
+#        print("no change in curr_angle ", curr_angle)
         new_angle = set_servo_angle(angle)
         return new_angle
     return curr_angle

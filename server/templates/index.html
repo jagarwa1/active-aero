@@ -49,7 +49,12 @@
             <h3>Sensor Data</h3>
             <div id="sensorData">Loading...</div>
         </section>
-
+        <section class="graphing">
+            <div style="margin-top: 20px;">
+            </div>
+            <h3>Graphing</h3>
+            <div id="graphData">Loading...</div>
+        </section>
         <section class="logs">
             <div style="margin-top: 20px;">
                 <button id="toggleLogging">Enable Logging</button>
@@ -146,11 +151,19 @@
 
         // calibrate button
         function calibrate() {
-            $("#calibrationStatus").text("Calibrating...");
-            $.post("/calibrate", function(response) {
-                $("#calibrationStatus").text("Calibration complete: " + response.status);
-            }).fail(function() {
-                $("#calibrationStatus").text("Calibration failed.");
+            fetch('/calibration_status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status == false) {
+                    $("#calibrationStatus").text("Calibrating...");
+                    $.post("/calibrate", function(response) {
+                        $("#calibrationStatus").text("Calibration complete: " + response.status);
+                    }).fail(function() {
+                        $("#calibrationStatus").text("Calibration failed.");
+                    });
+                } else if (data.status == true) {
+                    $("#calibrationStatus").text("Calibration complete");
+                }
             });
         }
 
@@ -177,7 +190,7 @@
         setInterval(updateSensorData, 1000);
         updateSensorData();
         loadLogs();
-        calibrate();
+        // calibrate();
  
         </script>
     </body>

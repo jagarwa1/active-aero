@@ -31,6 +31,7 @@ latest_sensor_data = {
     "gyro_z": 0
 }
 
+calibration_status = {'status': False}
 accel_x_offset = 0
 accel_y_offset = 0
 accel_z_offset = 0
@@ -71,8 +72,8 @@ def auto_mode_loop(flag):
         if auto_state['auto_mode']:
             accel_x,accely,priority = Aero.PriorityDefine(accel_x_offset,accel_y_offset)
             new_angle = Aero.control_wing(curr_angle, accel_x_offset, accel_y_offset, accel_z_offset, gyro_x_offset, gyro_y_offset, gyro_z_offset)
-            print("setting wing to ", new_angle, "°")
-            time.sleep(.5)
+            # print("setting wing to", new_angle, "°")
+            time.sleep(.1)
             curr_angle = new_angle
 
 def start_auto_mode_thread():
@@ -84,9 +85,6 @@ def start_auto_mode_thread():
 def stop_auto_mode_thread():
     auto_state['stop_flag'].set()
     auto_state['thread'] = None
-
-def generate_log_filename():
-    return os.path.join(LOG_DIR, f"wing_data_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
 
 # ---- start flask setup ----
 app = Flask(__name__)
@@ -117,7 +115,7 @@ def set_logging():
     mode = request.form.get("logging")
     if mode == "on":
         Aero.logging_active = True
-        Aero.log_filename = generate_log_filename
+        Aero.log_filename = os.path.join(LOG_DIR, f"wing_data_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
         print("Logging ENABLED")
     elif mode == "off":
         Aero.logging_active = False
@@ -130,7 +128,7 @@ def set_logging():
 # get the latest sensor data
 @app.route("/sensor", methods=["GET"])
 def sensor():
-    if Aero.logging_active:
+    if Aero.logging_active and not auto_state["auto_mode"]:
         global latest_sensor_data
         global curr_angle
         Aero.log_data(
@@ -190,9 +188,8 @@ def view_log_table(filename):
         </html>
     """)
 
-
 # set the servo angle in maual mode
-@app.route("/set_both_servos", methods=["POST"])
+@app.route("/set_both_servos", methods=['POST'])
 def servo():
     try:
         angle = float(request.form.get("angle"))
@@ -223,14 +220,22 @@ def set_servo_2():
 
 
 # calibrate the MPU6050
-@app.route("/calibrate", methods=["POST"])
+# as of now it calibrates on each page load, not on a restart of the app
+@app.route("/calibrate", methods=['POST'])
 def calibrate():
     global accel_x_offset, accel_y_offset, accel_z_offset, gyro_x_offset, gyro_y_offset, gyro_z_offset
+    global calibration_status
     try:
         accel_x_offset, accel_y_offset, accel_z_offset, gyro_x_offset, gyro_y_offset, gyro_z_offset = Aero.bootcal()
+        calibration_status["status"] = True
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 400
+
+@app.route("/calibration_status", methods=['GET'])
+def calibration_status():
+    global calibration_status
+    return jsonify(calibration_status)
 
 # ---- end flask setup ----
 
