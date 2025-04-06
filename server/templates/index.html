@@ -12,13 +12,18 @@
     </style>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> <!-- Font Awesome -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
 </head>
 <body>
     <h1>Active Aero Control</h1>
      
     <main>
         <section class="servo-controls">
-            <h2>Manual Mode</h2>
+            <h2>Manual Mode
+                    <label for="modeToggle">
+                        <input type="checkbox" id="modeToggle" checked>
+                    </label>
+            </h2>
             <div>
                 <label for="angleSlider">Wing Angle:</label>
                 <input type="range" id="angleSlider" min="0" max="180" value="0">
@@ -34,12 +39,6 @@
                 <input type="range" id="individualSlider2" min="0" max="180" value="0">
                 <span id="currentAngle2">0</span>°
             </div>
-            <div class="toggle-mode-container">
-                <label for="modeToggle">
-                    <input type="checkbox" id="modeToggle" checked>
-                    <span>Manual Mode</span>
-                </label>
-            </div>
         </section>
 
         <section class="sensor-data">
@@ -54,7 +53,7 @@
             <div style="margin-top: 20px;">
                 <button id="toggleLogging">Enable Logging</button>
             </div>
-            <h3>Available Log Files <i class="refresh-button fas fa-sync-alt"></i></h3>
+            <h3>Available Log Files <i onclick="loadLogs()" class="refresh-button fas fa-sync-alt"></i></h3>
             <ul id="logList">
                 <li>Loading...</li>
             </ul>
@@ -62,6 +61,25 @@
     </main>      
 
     <script>
+        // set the slider background color dynamically as the thumb moves
+        const slider1 = document.getElementById("angleSlider");
+        const slider2 = document.getElementById("individualSlider1");
+        const slider3 = document.getElementById("individualSlider2");
+
+        function updateSliderBackground(slider) {
+            const val = (slider.value - slider.min) / (slider.max - slider.min) * 100;
+            slider.style.background = `linear-gradient(to right, #F58A3D ${val}%, #F5D8C4 ${val}%)`;
+        }
+
+        slider1.addEventListener("input", function() {
+            updateSliderBackground(this);
+        });
+        slider2.addEventListener("input", function() {
+            updateSliderBackground(this);
+        });
+        slider3.addEventListener("input", function() {
+            updateSliderBackground(this);
+        });
 
         // handle mode toggle. hide slider depending on mode
         $("#modeToggle").change(function() {
@@ -148,6 +166,10 @@
             });
         }
 
+        // Initialize on page load
+        updateSliderBackground(slider1);
+        updateSliderBackground(slider2);    
+        updateSliderBackground(slider3);
         setInterval(updateSensorData, 1000);
         updateSensorData();
         loadLogs();

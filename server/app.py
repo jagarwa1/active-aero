@@ -128,6 +128,7 @@ def sensor():
 @app.route('/logs')
 def list_logs():
     files = [f for f in os.listdir(LOG_DIR) if f.endswith('.csv')]
+    files.sort() # sort by name
     return jsonify(files)
 
 # download a log file

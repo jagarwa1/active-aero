@@ -58,7 +58,7 @@ def get_sensor_data():
 
     return accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z
 
-# Control the servo angle
+# Control both servos of the wing angle
 def set_servo_angle(angle):
     try:
         kit.servo[0].angle = 180 - angle
@@ -66,12 +66,14 @@ def set_servo_angle(angle):
         return angle
     except Exception as e: print("Error setting servo angle:", e)
 
+# control the angle of servo0 
 def set_servo_0(angle):
     try:
         kit.servo[0].angle = 180 - angle
         return angle
     except Exception as e: print("Error setting servo0 angle:", e)
 
+# control the angle of servo1
 def set_servo_1(angle):
     try:
         kit.servo[1].angle = angle
