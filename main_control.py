@@ -14,7 +14,7 @@ sys.path.append('/home/benchh1/active-aero/lib/python3.11/site-packages')
 from adafruit_servokit import ServoKit
 
 # PWM servo driver setup
-kit = ServoKit(channels=8)
+# kit = ServoKit(channels=8)
 
 # MPU6050 setup
 MPU6050_ADDR = 0x68
@@ -32,6 +32,9 @@ def init_gyro_accel():
     except OSError:
         bus.write_byte_data(0x69, 0x6B, 0)  # try 0x69
         MPU6050_ADDR = 0x69
+    finally:
+        print("no i2c device")
+        return
     print("MPU6050_ADDR", hex(MPU6050_ADDR))
     
 # Read raw data from MPU6050
@@ -57,9 +60,23 @@ def get_sensor_data():
 
 # Control the servo angle
 def set_servo_angle(angle):
-    kit.servo[0].angle = 180 - angle
-    kit.servo[1].angle = angle
-    return angle
+    try:
+        kit.servo[0].angle = 180 - angle
+        kit.servo[1].angle = angle
+        return angle
+    except Exception as e: print("Error setting servo angle:", e)
+
+def set_servo_0(angle):
+    try:
+        kit.servo[0].angle = 180 - angle
+        return angle
+    except Exception as e: print("Error setting servo0 angle:", e)
+
+def set_servo_1(angle):
+    try:
+        kit.servo[1].angle = angle
+        return angle
+    except Exception as e: print("Error setting servo1 angle:", e)
 
 # Log data to CSV
 def log_data(timestamp, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, wing_angle):
@@ -241,19 +258,19 @@ def bootcal():
     time.sleep(1)
     return accel_x_offset,accel_y_offset,accel_z_offset,gyro_x_offset,gyro_y_offset,gyro_z_offset
     
-def PriorityDefine(accel_x_offset,accel_y_offset)
+def PriorityDefine(accel_x_offset,accel_y_offset):
     accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z = get_sensor_data()
     accel_x = accel_x - accel_x_offset
     accel_y = (accel_y - accel_y_offset)*1
-    if abs(accel_x) > abs(accel_y)
+    if abs(accel_x) > abs(accel_y):
         priority = 1 # forward accel priority
         return accel_x,accel_y,priority
-    else if abs(accel_x) < abs(accel_y)
+    elif abs(accel_x) < abs(accel_y):
         priority = 0
         return accel_x,accel_y,priority
     
-def WingMove(accel_x,accel_y,priority)
-    
+def WingMove(accel_x,accel_y,priority):
+    print("implement me!")
 
 # Main function
 if __name__ == "__main__":
@@ -284,8 +301,7 @@ if __name__ == "__main__":
                 new_angle = control_wing(curr_angle,accel_x_offset,accel_y_offset,accel_z_offset,gyro_x_offset,gyro_y_offset,gyro_z_offset)
                 time.sleep(.5)
                 curr_angle = new_angle
-
-                        break
+                break
     except KeyboardInterrupt:
         pass
     finally:

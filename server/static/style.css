@@ -1,0 +1,114 @@
+/* General page setup */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.container {
+    display: grid;
+    grid-template-columns: 1fr; /* Default to one column layout */
+    grid-template-rows: auto 1fr auto;
+    grid-gap: 20px;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Header styling */
+header {
+    text-align: center;
+    padding: 20px;
+    background-color: #007BFF;
+    color: white;
+}
+
+h1 {
+    margin: 0;
+    font-size: 2rem;
+}
+
+/* Main content styling */
+main {
+    display: grid;
+    grid-template-columns: 1fr; /* Single column by default */
+    gap: 20px;
+}
+
+@media (min-width: 768px) {
+    main {
+        grid-template-columns: 1fr 1fr; /* Two columns on medium screens */
+    }
+}
+
+@media (min-width: 1024px) {
+    main {
+        grid-template-columns: 1fr 1fr 1fr; /* Three columns on larger screens */
+    }
+}
+
+/* Section styling */
+section {
+    background-color: white;
+    padding: 5px 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+button {
+    padding: 5px 10px;
+    font-size: 13px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+button i {
+    margin-right: 8px;
+}
+
+/* Footer styling */
+footer {
+    text-align: center;
+    padding: 10px;
+    background-color: #333;
+    color: white;
+}
+
+/* Styling for lists and links */
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+ul li {
+    margin: 10px 0;
+}
+
+ul li a {
+    color: #007BFF;
+    text-decoration: none;
+}
+
+ul li a:hover {
+    text-decoration: underline;
+}
+  
+.refresh-button:hover {
+    cursor: pointer;
+}

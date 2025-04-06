@@ -1,14 +1,56 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Slider Example</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <meta charset="UTF-8">
+  <title>Active Aero Control</title>
+  <script>
+    function toggleMode(checkbox) {
+      const autoMode = checkbox.checked;
+      document.getElementById('sliders').style.display = autoMode ? 'none' : 'block';
+
+      fetch('/set_mode', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({auto_mode: autoMode})
+      });
+    }
+
+    function updateServos() {
+      const left = parseInt(document.getElementById('leftSlider').value);
+      const right = parseInt(document.getElementById('rightSlider').value);
+
+      document.getElementById('leftValue').innerText = left;
+      document.getElementById('rightValue').innerText = right;
+
+      fetch('/set_servo', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({left: left, right: right})
+      });
+    }
+
+    window.onload = function() {
+      const initialAuto = state['auto_mode'] ? true : false;
+      document.getElementById('autoMode').checked = initialAuto === "true";
+      document.getElementById('sliders').style.display = initialAuto === "true" ? 'none' : 'block';
+    };
+  </script>
 </head>
 <body>
-    <h1>Slider Value:</h1>
-    <input id="slider" type="range" min="0" max="100">
-    <p id="value-display"> Slider value: 0 </p>
+  <h1>Active Aero Control Panel</h1>
+  <label>
+    <input type="checkbox" id="autoMode" onchange="toggleMode(this)"> Auto Mode
+  </label>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <div id="sliders" style="margin-top:20px;">
+    <p>
+      Left Servo: <span id="leftValue">{{ state['servo_left'] }}</span><br>
+      <input type="range" id="leftSlider" min="0" max="180" value="{{ state['servo_left'] }}" oninput="updateServos()">
+    </p>
+    <p>
+      Right Servo: <span id="rightValue">{{ state['servo_right'] }}</span><br>
+      <input type="range" id="rightSlider" min="0" max="180" value="{{ state['servo_right'] }}" oninput="updateServos()">
+    </p>
+  </div>
 </body>
 </html>

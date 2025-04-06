@@ -1,13 +1,157 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-    <title>Active Aero</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Active Aero Control</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; }
+        h1 { margin-bottom: 20px; }
+        .data-box { margin-top: 20px; }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> <!-- Font Awesome -->
 </head>
 <body>
-    <input id="slider" type="range" min="0" max="100">
-    <p id="value-display">0</p>
+    <h1>Active Aero Control</h1>
+     
+    <main>
+        <section class="servo-controls">
+            <h2>Manual Mode</h2>
+            <div>
+                <label for="angleSlider">Wing Angle:</label>
+                <input type="range" id="angleSlider" min="0" max="180" value="0">
+                <span id="currentAngle">0</span>°
+            </div>
+            <div>
+                <label for="individualSlider1">Servo 0 Angle:</label>
+                <input type="range" id="individualSlider1" min="0" max="180" value="0">
+                <span id="currentAngle1">0</span>°
+            </div>
+            <div>
+                <label for="individualSlider2">Servo 1 Angle:</label>
+                <input type="range" id="individualSlider2" min="0" max="180" value="0">
+                <span id="currentAngle2">0</span>°
+            </div>
+            <div class="toggle-mode-container">
+                <label for="modeToggle">
+                    <input type="checkbox" id="modeToggle" checked>
+                    <span>Manual Mode</span>
+                </label>
+            </div>
+        </section>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
-</body>
+        <section class="sensor-data">
+            <div style="margin-top: 20px;">
+                <button onclick="calibrate()">Calibrate</button>
+            </div>
+            <h3>Sensor Data</h3>
+            <div id="sensorData">Loading...</div>
+        </section>
+
+        <section class="logs">
+            <div style="margin-top: 20px;">
+                <button id="toggleLogging">Enable Logging</button>
+            </div>
+            <h3>Available Log Files <i class="refresh-button fas fa-sync-alt"></i></h3>
+            <ul id="logList">
+                <li>Loading...</li>
+            </ul>
+        </section>      
+    </main>      
+
+    <script>
+
+        // handle mode toggle. hide slider depending on mode
+        $("#modeToggle").change(function() {
+            let manual = $(this).is(":checked");
+            if (manual) {
+                $("#manualControls").show();
+                $.post("/set_mode", { mode: "manual" });
+            } else {
+                $("#manualControls").hide();
+                $.post("/set_mode", { mode: "auto" });
+            }
+        });
+
+        // Update servo angle when the slider is moved
+        $("#angleSlider").on("input change", function(){
+            var angle = $(this).val();
+            $("#currentAngle").text(angle);
+            $.post("/set_both_servos", { angle: angle });
+        });
+
+        // Update servo 1 angle when the first slider is moved
+        $("#individualSlider1").on("input change", function(){
+            var angle = $(this).val();
+            $("#currentAngle1").text(angle);
+            $.post("/set_servo_0", { angle: angle });
+        });
+
+        // Update servo 2 angle when the second slider is moved
+        $("#individualSlider2").on("input change", function(){
+            var angle = $(this).val();
+            $("#currentAngle2").text(angle);
+            $.post("/set_servo_1", { angle: angle });
+        });
+
+
+        // Poll the sensor endpoint every second to update the display
+        function updateSensorData(){
+            $.getJSON("/sensor", function(data){
+                var html = "<p><strong>Accelerometer:</strong><br>" +
+                "X: " + data.accel_x.toFixed(2) + "<br>" +
+                "Y: " + data.accel_y.toFixed(2) + "<br>" +
+                "Z: " + data.accel_z.toFixed(2) + "</p>";
+                html += "<p><strong>Gyroscope:</strong><br>" +
+                "X: " + data.gyro_x.toFixed(2) + "<br>" +
+                "Y: " + data.gyro_y.toFixed(2) + "<br>" +
+                "Z: " + data.gyro_z.toFixed(2) + "</p>";
+                $("#sensorData").html(html);
+            });
+        }
+
+        // logging button
+        let loggingEnabled = false;
+        $("#toggleLogging").on("click", function() {
+            loggingEnabled = !loggingEnabled;
+
+            // button text
+            $(this).text(loggingEnabled ? "Disable Logging" : "Enable Logging");
+
+            // Send POST to Flask
+            $.post("/set_logging", { logging: loggingEnabled ? "on" : "off" });
+        });
+        // end logging button
+
+        // calibrate button
+        function calibrate() {
+            $.post("/calibrate", function(response) {
+                alert("Calibration complete: " + response);
+            });
+        }
+
+        // list logs
+        function loadLogs() {
+            $.getJSON("/logs", function(files) {
+                if (files.length === 0) {
+                $("#logList").html("<li>No logs available</li>");
+                return;
+                }
+
+                let html = "";
+                files.forEach(function(file) {
+                html += `<li><a href="/logs/view/${file}" target="_blank">${file}</a></li>`;
+                });
+                $("#logList").html(html);
+            });
+        }
+
+        setInterval(updateSensorData, 1000);
+        updateSensorData();
+        loadLogs();
+ 
+        </script>
+    </body>
 </html>
