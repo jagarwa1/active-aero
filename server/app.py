@@ -73,7 +73,6 @@ def auto_mode_loop(flag):
             accel_x,accely,priority = Aero.PriorityDefine(accel_x_offset,accel_y_offset)
             new_angle = Aero.control_wing(curr_angle, accel_x_offset, accel_y_offset, accel_z_offset, gyro_x_offset, gyro_y_offset, gyro_z_offset)
             # print("setting wing to", new_angle, "°")
-            time.sleep(.1)
             curr_angle = new_angle
 
 def start_auto_mode_thread():
@@ -224,10 +223,8 @@ def set_servo_2():
 @app.route("/calibrate", methods=['POST'])
 def calibrate():
     global accel_x_offset, accel_y_offset, accel_z_offset, gyro_x_offset, gyro_y_offset, gyro_z_offset
-    global calibration_status
     try:
         accel_x_offset, accel_y_offset, accel_z_offset, gyro_x_offset, gyro_y_offset, gyro_z_offset = Aero.bootcal()
-        calibration_status["status"] = True
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 400

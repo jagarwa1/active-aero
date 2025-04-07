@@ -71,6 +71,9 @@
         const slider1 = document.getElementById("angleSlider");
         const slider2 = document.getElementById("individualSlider1");
         const slider3 = document.getElementById("individualSlider2");
+        let loggingEnabled = false;
+        let isCalibrating = false;
+        let intervalID = null;
 
         function updateSliderBackground(slider) {
             const val = (slider.value - slider.min) / (slider.max - slider.min) * 100;
@@ -123,6 +126,8 @@
 
         // Poll the sensor endpoint every second to update the display
         function updateSensorData(){
+            if (isCalibrating) return; // skip fetching during calibration
+
             $.getJSON("/sensor", function(data){
                 var html = "<p><strong>Accelerometer:</strong><br>" +
                 "X: " + data.accel_x.toFixed(2) + "<br>" +
@@ -136,8 +141,19 @@
             });
         }
 
+        function startSensorUpdates() {
+            intervalID = setInterval(updateSensorData, 1000);
+        }
+
+        function stopSensorUpdates() {
+            if (intervalID !== null) {
+                clearInterval(intervalID);
+                intervalID = null;
+            }
+        }
+
+
         // logging button
-        let loggingEnabled = false;
         $("#toggleLogging").on("click", function() {
             loggingEnabled = !loggingEnabled;
 
@@ -151,20 +167,20 @@
 
         // calibrate button
         function calibrate() {
-            fetch('/calibration_status')
-            .then(response => response.json())
-            .then(data => {
-                if (data.status == false) {
-                    $("#calibrationStatus").text("Calibrating...");
-                    $.post("/calibrate", function(response) {
-                        $("#calibrationStatus").text("Calibration complete: " + response.status);
-                    }).fail(function() {
-                        $("#calibrationStatus").text("Calibration failed.");
-                    });
-                } else if (data.status == true) {
-                    $("#calibrationStatus").text("Calibration complete");
-                }
+            isCalibrating = true;
+            clearInterval(intervalID);
+            intervalID = null;
+
+            $("#calibrationButton").prop("disabled", true);
+            $("#calibrationStatus").text("Calibrating...");
+            $.post("/calibrate", function(response) {
+                $("#calibrationStatus").text("Calibration success.");
+            }).fail(function() {
+                $("#calibrationStatus").text("Calibration failed.");
+                $("#calibrationButton").prop("disabled", false);
             });
+            isCalibrating = false;
+            intervalID = setInterval(updateSensorData, 1000);
         }
 
         // list logs
@@ -187,11 +203,12 @@
         updateSliderBackground(slider1);
         updateSliderBackground(slider2);    
         updateSliderBackground(slider3);
-        setInterval(updateSensorData, 1000);
-        updateSensorData();
+        
         loadLogs();
-        // calibrate();
- 
+        calibrate();
+
+        startSensorUpdates();
+                
         </script>
     </body>
 </html>

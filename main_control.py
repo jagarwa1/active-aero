@@ -34,6 +34,8 @@ def init_gyro_accel():
     except OSError:
         bus.write_byte_data(0x69, 0x6B, 0)  # try 0x69
         MPU6050_ADDR = 0x69
+
+    bus.write_byte_data(MPU6050_ADDR, 0x1C, 0x10)  # change the AFS_SEL to 2
     print("MPU6050_ADDR", hex(MPU6050_ADDR))
     
 # Read raw data from MPU6050
@@ -47,9 +49,15 @@ def read_raw_data(addr):
 
 # Convert raw data to acceleration (in g) and gyro data (in degrees/sec)
 def get_sensor_data():
-    accel_x = read_raw_data(0x3B) / 16384.0
-    accel_y = read_raw_data(0x3D) / 16384.0
-    accel_z = read_raw_data(0x3F) / 16384.0
+    # for AFS_SEL = 0
+    # accel_x = read_raw_data(0x3B) / 16384.0
+    # accel_y = read_raw_data(0x3D) / 16384.0
+    # accel_z = read_raw_data(0x3F) / 16384.0
+
+    # for AFS_SEL = 2 
+    accel_x = read_raw_data(0x3B) / 4096.0
+    accel_y = read_raw_data(0x3D) / 4096.0
+    accel_z = read_raw_data(0x3F) / 4096.0
 
     gyro_x = read_raw_data(0x43) / 131.0
     gyro_y = read_raw_data(0x45) / 131.0
@@ -130,11 +138,12 @@ def control_wing(curr_angle, accel_x_offset, accel_y_offset, accel_z_offset, gyr
     if curr_angle != angle:
 #        print("no change in curr_angle ", curr_angle)
         new_angle = set_servo_angle(angle)
+        log_data(datetime.now().strftime('%H:%M:%S.%f'), accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, angle)
         return new_angle
-    return curr_angle
+    else:
+        log_data(datetime.now().strftime('%H:%M:%S.%f'), accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, angle)
+        return curr_angle
 
-    # Update GUI and log data
-    log_data(datetime.now().strftime('%H:%M:%S.%f'), accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, angle)
 
 # Read calibration parameters from CSV
 def read_cal_params(filename):
@@ -152,7 +161,7 @@ def read_cal_params(filename):
             iter_ii += 1
     return cal_offsets
 
-# GUI Setup
+# tkinter GUI Setup
 class WingControlGUI(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -291,6 +300,12 @@ if __name__ == "__main__":
         parser.add_argument("-c", "--calibrate", action="store_true", help="Enable calibration mode")        
         args = parser.parse_args()
         init_gyro_accel()
+        accel_x_offset = 0
+        accel_y_offset = 0
+        accel_z_offset = 0
+        gyro_x_offset = 0
+        gyro_y_offset = 0
+        gyro_z_offset = 0
         
         if args.log:
             print("Logging enabled")
@@ -307,11 +322,10 @@ if __name__ == "__main__":
             curr_angle = 0
             testval = 0
             while True:
-                accel_x,accely,priority = PriorityDefine(accel_x_offset,accel_y_offset)
+                # accel_x, accely, priority = PriorityDefine(accel_x_offset, accel_y_offset)
                 new_angle = control_wing(curr_angle,accel_x_offset,accel_y_offset,accel_z_offset,gyro_x_offset,gyro_y_offset,gyro_z_offset)
-                time.sleep(.5)
                 curr_angle = new_angle
-                break
+
     except KeyboardInterrupt:
         pass
     finally:
