@@ -66,10 +66,12 @@ def get_sensor_data():
     return accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z
 
 # Control both servos of the wing angle
-def set_servo_angle(angle):
+def set_servo_angle(angle1,angle2,angle3,angle4):
     try:
-        kit.servo[0].angle = 180 - angle
-        kit.servo[1].angle = angle
+        kit.servo[0].angle = 180 - angle1
+        kit.servo[1].angle = angle2
+        kit.servo[2].angle = 180 - angle3
+        kit.servo[3].angle = angle4
         return angle
     except Exception as e: print("Error setting servo angle:", e)
 
@@ -290,7 +292,50 @@ def PriorityDefine(accel_x_offset,accel_y_offset):
     
 def WingMove(accel_x,accel_y,priority):
     print("implement me!")
+    match priority:
+    	case 1:
+    	# Make Accel Force Graph, log data for Min-Max and develop function
+    		WingAngle = -72*ceiling(accel_x)
+    		if WingAngle >= 180
+    			WingAngle = 180
+    		else if WingAngle <= 0
+    			WingAngle = 0
+    		
+    		if accel_x >= 1.5
+    			HoodAngle = 180
+    		else
+    			HoodAngle = 0
+    			
+    		set_servo_angle(WingAngle,WingAngle,HoodAngle,HoodAngle)
+    		Angle1 = WingAngle
+    		Angle2 = WingAngle
+    		Angle3 = HoodAngle
+    		Angle4 = HoodAngle
+    	case 2:
+    	# Make Accel Force Graph, log data for Min-Max and develop function
+    		WingAngleY = 72*ceiling(accel_x)
+    		if WingAngleY > 0
+    			if WingAngleY >= 180
+    				WingAngleY = 180
+    			else if WingAngleY <= 0
+    				WingAngleY = 0
+				WingAngleY2 = 0
+    		else if WingAngleY < 0
+    			if WingAngleY2 >= 180
+    				WingAngleY2 = 180
+    			else if WingAngle <= 0
+    				WingAngleY2 = 0
+    			WingAngleY = 0
+    			HoodAngle = 0
+    		set_servo_angle(WingAngleY,WingAngleY2,HoodAngle,HoodAngle)
+    		Angle1 = WingAngleY
+    		Angle2 = WingAngleY2
+    		Angle3 = HoodAngle
+    		Angle4 = HoodAngle
+    		
+	return Angle1,Angle2,Angle3,Angle4	
 
+    
 # Main function
 if __name__ == "__main__":
     try:
@@ -322,8 +367,9 @@ if __name__ == "__main__":
             curr_angle = 0
             testval = 0
             while True:
-                # accel_x, accely, priority = PriorityDefine(accel_x_offset, accel_y_offset)
-                new_angle = control_wing(curr_angle,accel_x_offset,accel_y_offset,accel_z_offset,gyro_x_offset,gyro_y_offset,gyro_z_offset)
+                accel_x, accely, priority = PriorityDefine(accel_x_offset, accel_y_offset)
+                # = control_wing(curr_angle,accel_x_offset,accel_y_offset,accel_z_offset,gyro_x_offset,gyro_y_offset,gyro_z_offset)
+                Angle1,Angle2,Angle3,Angle4 = WingMove(accel_x,accel_y,priority)
                 curr_angle = new_angle
 
     except KeyboardInterrupt:
