@@ -40,6 +40,10 @@ gyro_y_offset = 0
 gyro_z_offset = 0
 
 curr_angle = 0
+Angle1 = 0
+Angle2 = 0
+Angle3 = 0
+Angle4 = 0
 
 auto_state = {
     "auto_mode": False,
@@ -61,7 +65,7 @@ def sensor_update_loop():
             "gyro_y": gy - gyro_y_offset,
             "gyro_z": gz - gyro_z_offset
         }
-        if Aero.logging_active:
+        if Aero.logging_active and not auto_state["auto_mode"]:
             Aero.log_data(datetime.now().strftime('%H:%M:%S.%f'), 
             latest_sensor_data['accel_x'], 
             latest_sensor_data['accel_y'], 
@@ -69,7 +73,10 @@ def sensor_update_loop():
             latest_sensor_data['gyro_x'], 
             latest_sensor_data['gyro_y'], 
             latest_sensor_data['gyro_z'], 
-            curr_angle)
+            Angle1,
+            Angle2,
+            Angle3,
+            Angle4)
         
 
 # background thread for auto control
@@ -82,11 +89,22 @@ def auto_mode_loop(flag):
             accel_x, accel_y, priority = Aero.PriorityDefine(accel_x_offset, accel_y_offset)
             # = control_wing(curr_angle,accel_x_offset,accel_y_offset,accel_z_offset,gyro_x_offset,gyro_y_offset,gyro_z_offset)
             Angle1, Angle2, Angle3, Angle4 = Aero.WingMove(accel_x, accel_y, priority)
-            print("angle1: ", Angle1)
-            print("angle2: ", Angle2)
-            print("angle3: ", Angle3)
-            print("angle4: ", Angle4)
-            curr_angle = new_angle
+            # print("angle1: ", Angle1)
+            # print("angle2: ", Angle2)
+            # print("angle3: ", Angle3)
+            # print("angle4: ", Angle4)
+            if Aero.logging_active:
+                Aero.log_data(datetime.now().strftime('%H:%M:%S.%f'), 
+                latest_sensor_data['accel_x'], 
+                latest_sensor_data['accel_y'], 
+                latest_sensor_data['accel_z'], 
+                latest_sensor_data['gyro_x'], 
+                latest_sensor_data['gyro_y'], 
+                latest_sensor_data['gyro_z'], 
+                Angle1,
+                Angle2,
+                Angle3,
+                Angle4)
 
 def start_auto_mode_thread():
     if auto_state['thread'] is None or not auto_state['thread'].is_alive():
@@ -114,9 +132,13 @@ def set_mode():
     if data == "auto":
         auto_state['auto_mode'] = True
         start_auto_mode_thread()
+        if Aero.logging_active: # name the file auto mode
+            Aero.log_filename = os.path.join(LOG_DIR, f"auto_mode_data_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
     elif data == "manual":
         auto_state['auto_mode'] = False
         stop_auto_mode_thread()
+        if Aero.logging_active: # name the file manual mode
+            Aero.log_filename = os.path.join(LOG_DIR, f"manual_mode_data_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
     else:
         return jsonify(success=False, message="Invalid mode"), 400
     return jsonify(success=True, message=f"Mode set to {'Auto' if auto_state['auto_mode'] else 'Manual'}")
@@ -127,11 +149,16 @@ def set_logging():
     mode = request.form.get("logging")
     if mode == "on":
         Aero.logging_active = True
-        Aero.log_filename = os.path.join(LOG_DIR, f"wing_data_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
-        print("Logging ENABLED")
+        
+        if auto_state["auto_mode"]: # name the file in acccordance to its mode
+            Aero.log_filename = os.path.join(LOG_DIR, f"auto_mode_data_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
+        else:
+            Aero.log_filename = os.path.join(LOG_DIR, f"manual_mode_data_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
+
+        print("------Logging ENABLED------")
     elif mode == "off":
         Aero.logging_active = False
-        print("Logging DISABLED")
+        print("------Logging DISABLED-----")
     else:
         return jsonify(success=False, message="Invalid logging state"), 400
 

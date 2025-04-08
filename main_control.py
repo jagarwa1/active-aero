@@ -105,7 +105,7 @@ def set_servo_3(angle):
     except Exception as e: print("Error setting servo3 angle:", e)
 
 # Log data to CSV
-def log_data(timestamp, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, wing_angle):
+def log_data(timestamp, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, wing_angleL, wing_angleR, roof_angleL, roof_angleR):
     if logging_active:
         print("Logging to", log_filename)
         
@@ -115,9 +115,9 @@ def log_data(timestamp, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, wing_
         with open(log_filename, mode='a', newline='') as file:
             writer = csv.writer(file)
             if not file_exists:
-                writer.writerow(["timestamp", "accel_x", "accel_y", "accel_z", "gyro_x", "gyro_y", "gyro_z", "wing_angle"])
+                writer.writerow(["timestamp", "accel_x", "accel_y", "accel_z", "gyro_x", "gyro_y", "gyro_z", "wing_angleL", "wing_angleR", "roof_angleL", "roof_angleR"])
         
-            writer.writerow([timestamp, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, wing_angle])
+            writer.writerow([timestamp, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, wing_angleL, wing_angleR, roof_angleL, roof_angleR])
 
 # Active wing control logic
 def control_wing(curr_angle, accel_x_offset, accel_y_offset, accel_z_offset, gyro_x_offset, gyro_y_offset, gyro_z_offset):
@@ -328,7 +328,7 @@ def WingMove(accel_x, accel_y, priority):
 
         case 1:
         # Make Accel Force Graph, log data for Min-Max and develop function
-            WingAngleY = 72*math.ceil(accel_x)
+            WingAngleY = 72*round(accel_x, 4)
 
             if abs(WingAngleY) >= 30:
                 WingAngleY2 = -WingAngleY
