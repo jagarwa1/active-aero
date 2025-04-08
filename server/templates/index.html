@@ -12,7 +12,7 @@
     </style>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> <!-- Font Awesome -->
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='orange-racer.png') }}">
 </head>
 <body>
     <h1>Active Aero Control</h1>
@@ -24,26 +24,36 @@
                         <input type="checkbox" id="modeToggle" checked>
                     </label>
             </h2>
-            <div>
-                <label for="angleSlider">Wing Angle:</label>
-                <input type="range" id="angleSlider" min="0" max="180" value="0">
-                <span id="currentAngle">0</span>°
-            </div>
-            <div>
-                <label for="individualSlider1">Servo 0 Angle:</label>
-                <input type="range" id="individualSlider1" min="0" max="180" value="0">
-                <span id="currentAngle1">0</span>°
-            </div>
-            <div>
-                <label for="individualSlider2">Servo 1 Angle:</label>
-                <input type="range" id="individualSlider2" min="0" max="180" value="0">
-                <span id="currentAngle2">0</span>°
+            <div id="manualControls">
+                <div>
+                    <label for="angleSlider">Wing Angle:</label>
+                    <input type="range" id="angleSlider" min="0" max="180" value="0">
+                    <span id="currentAngle">0</span>°
+                </div>
+                <div>
+                    <label for="individualSlider1">Servo 0 Angle:</label>
+                    <input type="range" id="individualSlider1" min="0" max="180" value="0">
+                    <span id="currentAngle1">0</span>°
+                </div>
+                <div>
+                    <label for="individualSlider2">Servo 1 Angle:</label>
+                    <input type="range" id="individualSlider2" min="0" max="180" value="0">
+                    <span id="currentAngle2">0</span>°
+                </div>
             </div>
         </section>
 
         <section class="sensor-data">
             <div style="margin-top: 20px;">
-                <button onclick="calibrate()">Calibrate</button>
+                <button id="calibrationButton" onclick="calibrate()">Calibrate</button>
+                <div id="calibrationIndicator" style="
+                    width: 15px;
+                    height: 15px;
+                    border-radius: 50%;
+                    background-color: gray;
+                    display: inline-block;
+                    margin-left: 10px;">
+                </div>
                 <p id="calibrationStatus"></p>
             </div>
             <h3>Sensor Data</h3>
@@ -71,9 +81,9 @@
         const slider1 = document.getElementById("angleSlider");
         const slider2 = document.getElementById("individualSlider1");
         const slider3 = document.getElementById("individualSlider2");
-        let loggingEnabled = false;
-        let isCalibrating = false;
-        let intervalID = null;
+        var loggingEnabled = false;
+        var isCalibrating = false;
+        var sensorIntervalId = null;
 
         function updateSliderBackground(slider) {
             const val = (slider.value - slider.min) / (slider.max - slider.min) * 100;
@@ -102,21 +112,21 @@
             }
         });
 
-        // Update servo angle when the slider is moved
+        // update servo angle when the slider is moved
         $("#angleSlider").on("input change", function(){
             var angle = $(this).val();
             $("#currentAngle").text(angle);
             $.post("/set_both_servos", { angle: angle });
         });
 
-        // Update servo 1 angle when the first slider is moved
+        // update servo 1 angle when the first slider is moved
         $("#individualSlider1").on("input change", function(){
             var angle = $(this).val();
             $("#currentAngle1").text(angle);
             $.post("/set_servo_0", { angle: angle });
         });
 
-        // Update servo 2 angle when the second slider is moved
+        // update servo 2 angle when the second slider is moved
         $("#individualSlider2").on("input change", function(){
             var angle = $(this).val();
             $("#currentAngle2").text(angle);
@@ -124,11 +134,12 @@
         });
 
 
-        // Poll the sensor endpoint every second to update the display
+        // poll the sensor endpoint every second to update the display
         function updateSensorData(){
             if (isCalibrating) return; // skip fetching during calibration
 
             $.getJSON("/sensor", function(data){
+                // render some html
                 var html = "<p><strong>Accelerometer:</strong><br>" +
                 "X: " + data.accel_x.toFixed(2) + "<br>" +
                 "Y: " + data.accel_y.toFixed(2) + "<br>" +
@@ -137,21 +148,37 @@
                 "X: " + data.gyro_x.toFixed(2) + "<br>" +
                 "Y: " + data.gyro_y.toFixed(2) + "<br>" +
                 "Z: " + data.gyro_z.toFixed(2) + "</p>";
+
                 $("#sensorData").html(html);
             });
         }
 
-        function startSensorUpdates() {
-            intervalID = setInterval(updateSensorData, 1000);
-        }
+        // calibrate button
+        function calibrate() {
+            isCalibrating = true;
+            console.log("1", sensorIntervalId)
+            clearInterval(sensorIntervalId);
+            sensorIntervalId = null;
+            console.log("2", sensorIntervalId)
 
-        function stopSensorUpdates() {
-            if (intervalID !== null) {
-                clearInterval(intervalID);
-                intervalID = null;
-            }
-        }
+            $("#calibrationIndicator").css("background-color", "orange");
+            $("#calibrationButton").prop("disabled", true);
+            $("#calibrationStatus").text("Calibrating...");
+            $.post("/calibrate", function(response) {
+                $("#calibrationStatus").text("Calibration success: " + response.message);
+                $("#calibrationIndicator").css("background-color", "green");
+                isCalibrating = false;
 
+            }).fail(function() {
+                $("#calibrationStatus").text("Calibration failed");
+                $("#calibrationButton").prop("disabled", false);
+                $("#calibrationIndicator").css("background-color", "red");
+                isCalibrating = false;
+            });
+            sensorIntervalId = setInterval(updateSensorData, 1000); // restart the interval
+            console.log("3", sensorIntervalId)
+        }
+        // end calibrate button
 
         // logging button
         $("#toggleLogging").on("click", function() {
@@ -164,24 +191,6 @@
             $.post("/set_logging", { logging: loggingEnabled ? "on" : "off" });
         });
         // end logging button
-
-        // calibrate button
-        function calibrate() {
-            isCalibrating = true;
-            clearInterval(intervalID);
-            intervalID = null;
-
-            $("#calibrationButton").prop("disabled", true);
-            $("#calibrationStatus").text("Calibrating...");
-            $.post("/calibrate", function(response) {
-                $("#calibrationStatus").text("Calibration success.");
-            }).fail(function() {
-                $("#calibrationStatus").text("Calibration failed.");
-                $("#calibrationButton").prop("disabled", false);
-            });
-            isCalibrating = false;
-            intervalID = setInterval(updateSensorData, 1000);
-        }
 
         // list logs
         function loadLogs() {
@@ -203,11 +212,8 @@
         updateSliderBackground(slider1);
         updateSliderBackground(slider2);    
         updateSliderBackground(slider3);
-        
         loadLogs();
         calibrate();
-
-        startSensorUpdates();
                 
         </script>
     </body>
