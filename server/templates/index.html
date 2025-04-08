@@ -32,7 +32,7 @@
                 </div>
                 <p id="calibrationStatus"></p>
             </div>
-            <h3>Sensor Data</h3>
+            <h2>Sensor Data</h2>
             <div id="sensorData">Loading...</div>
         </section>
 
@@ -47,13 +47,16 @@
                     <label class="switch" for="wingSliderSplitter">
                         <input type="checkbox" id="wingSliderSplitter">
                         <span class="slider round"></span>
+                        <span class="switch-label">Wing</span>
                     </label>
                     <label class="switch" for="roofSliderSplitter">
                         <input type="checkbox" id="roofSliderSplitter">
                         <span class="slider round"></span>
+                        <span class="switch-label">Roof</span>
                     </label>
                 </div>
             </section>
+            
             <div id="manualControls">
                 <div id="wingAngle">
                     <label for="wingAngleSlider">Wing Angle: <span id="currentAngle0">0</span>°</label>
@@ -82,22 +85,26 @@
             </div>
         </section>
         
-        <section class="graphing">
-            <div style="margin-top: 20px;">
-            </div>
-            <h3>Graphing</h3>
-            <div id="graphData">Loading...</div>
-        </section>
-
         <section class="logs">
             <div style="margin-top: 20px;">
                 <button id="toggleLogging">Enable Logging</button>
             </div>
-            <h3>Available Log Files <i onclick="loadLogs()" class="refresh-button fas fa-sync-alt"></i></h3>
-            <ul id="logList">
-                <li>Loading...</li>
-            </ul>
-        </section>      
+            
+            <h2>Available Log Files <i onclick="loadLogs()" class="refresh-button fas fa-sync-alt"></i></h2>
+            
+            <div class="log-list-container">
+                <ul id="logList">
+                    <li>Loading...</li>
+                </ul>
+            </div>
+        </section>    
+        
+        <section class="graphing">
+            <div style="margin-top: 20px;">
+            </div>
+            <h2>Graphing</h2>
+            <div id="graphData">Loading...</div>
+        </section>
     </main>      
 
     <script>
@@ -233,13 +240,13 @@
             $("#calibrationButton").prop("disabled", true);
             $("#calibrationStatus").text("Calibrating...");
             $.post("/calibrate", function(response) {
-                $("#calibrationStatus").text("Calibration success: " + response.message);
+                $("#calibrationStatus").text("Calibration success.");
                 $("#calibrationButton").prop("disabled", false);
                 $("#calibrationIndicator").css("background-color", "green");
                 isCalibrating = false;
 
             }).fail(function() {
-                $("#calibrationStatus").text("Calibration failed");
+                $("#calibrationStatus").text("Calibration failed: " + response.message);
                 $("#calibrationButton").prop("disabled", false);
                 $("#calibrationIndicator").css("background-color", "red");
                 isCalibrating = false;
@@ -308,7 +315,7 @@
         updateSliderBackground(slider6);
         
         loadLogs();
-        calibrate();
+        // calibrate();
                 
         </script>
     </body>
