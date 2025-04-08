@@ -4,14 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Active Aero Control</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="/static/jquery-3.6.0.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 30px; }
         h1 { margin-bottom: 20px; }
         .data-box { margin-top: 20px; }
     </style>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> <!-- Font Awesome -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/all.min.css') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
 </head>
 <body>
@@ -25,20 +25,36 @@
                     </label>
             </h2>
             <div>
-                <label for="angleSlider">Wing Angle:</label>
-                <input type="range" id="angleSlider" min="0" max="180" value="0">
-                <span id="currentAngle">0</span>°
+                <label for="wingAngleSlider">Wing Angle:</label>
+                <input type="range" id="wingAngleSlider" min="0" max="180" value="0">
+                <span id="currentAngle0">0</span>°
             </div>
             <div>
-                <label for="individualSlider1">Servo 0 Angle:</label>
-                <input type="range" id="individualSlider1" min="0" max="180" value="0">
+                <label for="wingLeftSlider">Wing Left Angle:</label>
+                <input type="range" id="wingLeftSlider" min="0" max="180" value="0">
                 <span id="currentAngle1">0</span>°
             </div>
             <div>
-                <label for="individualSlider2">Servo 1 Angle:</label>
-                <input type="range" id="individualSlider2" min="0" max="180" value="0">
+                <label for="wingRightSlider">Wing Right Angle:</label>
+                <input type="range" id="wingRightSlider" min="0" max="180" value="0">
                 <span id="currentAngle2">0</span>°
             </div>
+            <div>
+                <label for="roofSlider">Roof Angle:</label>
+                <input type="range" id="roofSlider" min="0" max="180" value="0">
+                <span id="currentAngle3">0</span>°
+            </div>
+            <div>
+                <label for="roofSliderLeft">Roof Left Angle:</label>
+                <input type="range" id="roofSliderLeft" min="0" max="180" value="0">
+                <span id="currentAngle4">0</span>°
+            </div>
+            <div>
+                <label for="roofSliderRight">Roof Right Angle:</label>
+                <input type="range" id="roofSliderRight" min="0" max="180" value="0">
+                <span id="currentAngle5">0</span>°
+            </div>
+        
         </section>
 
         <section class="sensor-data">
@@ -68,9 +84,13 @@
 
     <script>
         // set the slider background color dynamically as the thumb moves
-        const slider1 = document.getElementById("angleSlider");
-        const slider2 = document.getElementById("individualSlider1");
-        const slider3 = document.getElementById("individualSlider2");
+        const slider1 = document.getElementById("wingAngleSlider");
+        const slider2 = document.getElementById("wingLeftSlider");
+        const slider3 = document.getElementById("wingRightSlider");
+        const slider4 = document.getElementById("roofSlider");
+        const slider5 = document.getElementById("roofSliderLeft");
+        const slider6 = document.getElementById("roofSliderRight");
+
         let loggingEnabled = false;
         let isCalibrating = false;
         let intervalID = null;
@@ -83,10 +103,24 @@
         slider1.addEventListener("input", function() {
             updateSliderBackground(this);
         });
+        
         slider2.addEventListener("input", function() {
             updateSliderBackground(this);
         });
+        
         slider3.addEventListener("input", function() {
+            updateSliderBackground(this);
+        });
+        
+        slider4.addEventListener("input", function() {
+            updateSliderBackground(this);
+        });
+
+        slider5.addEventListener("input", function() {
+            updateSliderBackground(this);
+        });
+        
+        slider6.addEventListener("input", function() {
             updateSliderBackground(this);
         });
 
@@ -103,26 +137,45 @@
         });
 
         // Update servo angle when the slider is moved
-        $("#angleSlider").on("input change", function(){
+        $("#wingAngleSlider").on("input change", function(){
             var angle = $(this).val();
-            $("#currentAngle").text(angle);
+            $("#currentAngle0").text(angle);
             $.post("/set_both_servos", { angle: angle });
         });
 
         // Update servo 1 angle when the first slider is moved
-        $("#individualSlider1").on("input change", function(){
+        $("#wingRightSlider").on("input change", function(){
             var angle = $(this).val();
-            $("#currentAngle1").text(angle);
+            $("#currentAngle2").text(angle);
             $.post("/set_servo_0", { angle: angle });
         });
 
         // Update servo 2 angle when the second slider is moved
-        $("#individualSlider2").on("input change", function(){
+        $("#wingLeftSlider").on("input change", function(){
             var angle = $(this).val();
-            $("#currentAngle2").text(angle);
+            $("#currentAngle1").text(angle);
             $.post("/set_servo_1", { angle: angle });
         });
 
+        $("#roofSlider").on("input change", function(){
+            var angle = $(this).val();
+            $("#currentAngle3").text(angle);
+            $.post("/set_both_servos", { angle: angle });
+        });
+
+        // Update servo 2 angle when the second slider is moved
+        $("#roofSliderLeft").on("input change", function(){
+            var angle = $(this).val();
+            $("#currentAngle4").text(angle);
+            $.post("/set_servo_2", { angle: angle });
+        });
+
+        // Update servo 2 angle when the second slider is moved
+        $("#roofSliderRight").on("input change", function(){
+            var angle = $(this).val();
+            $("#currentAngle5").text(angle);
+            $.post("/set_servo_3", { angle: angle });
+        });
 
         // Poll the sensor endpoint every second to update the display
         function updateSensorData(){
@@ -142,7 +195,7 @@
         }
 
         function startSensorUpdates() {
-            intervalID = setInterval(updateSensorData, 1000);
+            intervalID = setInterval(updateSensorData, 200);
         }
 
         function stopSensorUpdates() {
@@ -180,7 +233,7 @@
                 $("#calibrationButton").prop("disabled", false);
             });
             isCalibrating = false;
-            intervalID = setInterval(updateSensorData, 1000);
+            intervalID = setInterval(updateSensorData, 500);
         }
 
         // list logs
@@ -203,9 +256,12 @@
         updateSliderBackground(slider1);
         updateSliderBackground(slider2);    
         updateSliderBackground(slider3);
+        updateSliderBackground(slider4);
+        updateSliderBackground(slider5);
+        updateSliderBackground(slider6);
         
         loadLogs();
-        calibrate();
+        // calibrate();
 
         startSensorUpdates();
                 

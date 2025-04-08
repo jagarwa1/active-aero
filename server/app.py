@@ -61,7 +61,16 @@ def sensor_update_loop():
             "gyro_y": gy - gyro_y_offset,
             "gyro_z": gz - gyro_z_offset
         }
-        time.sleep(.5)  # update every second
+        if Aero.logging_active:
+            Aero.log_data(datetime.now().strftime('%H:%M:%S.%f'), 
+            latest_sensor_data['accel_x'], 
+            latest_sensor_data['accel_y'], 
+            latest_sensor_data['accel_z'], 
+            latest_sensor_data['gyro_x'], 
+            latest_sensor_data['gyro_y'], 
+            latest_sensor_data['gyro_z'], 
+            curr_angle)
+        
 
 # background thread for auto control
 def auto_mode_loop(flag):
@@ -70,9 +79,13 @@ def auto_mode_loop(flag):
     new_angle = 0
     while not flag.is_set():
         if auto_state['auto_mode']:
-            accel_x,accely,priority = Aero.PriorityDefine(accel_x_offset,accel_y_offset)
-            new_angle = Aero.control_wing(curr_angle, accel_x_offset, accel_y_offset, accel_z_offset, gyro_x_offset, gyro_y_offset, gyro_z_offset)
-            # print("setting wing to", new_angle, "°")
+            accel_x, accel_y, priority = Aero.PriorityDefine(accel_x_offset, accel_y_offset)
+            # = control_wing(curr_angle,accel_x_offset,accel_y_offset,accel_z_offset,gyro_x_offset,gyro_y_offset,gyro_z_offset)
+            Angle1, Angle2, Angle3, Angle4 = Aero.WingMove(accel_x, accel_y, priority)
+            print("angle1: ", Angle1)
+            print("angle2: ", Angle2)
+            print("angle3: ", Angle3)
+            print("angle4: ", Angle4)
             curr_angle = new_angle
 
 def start_auto_mode_thread():
@@ -192,13 +205,13 @@ def view_log_table(filename):
 def servo():
     try:
         angle = float(request.form.get("angle"))
-        Aero.set_servo_angle(angle)
+        Aero.set_servo_angle(angle, angle, angle, angle)
         return jsonify({"status": "success", "angle": angle})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 400
 
 @app.route('/set_servo_0', methods=['POST'])
-def set_servo_1():
+def set_servo_0():
     angle = request.form.get("angle")
     if angle is not None:
         # Here, you should call your servo control function
@@ -208,11 +221,31 @@ def set_servo_1():
         return jsonify(success=False, message="Invalid angle"), 400
 
 @app.route('/set_servo_1', methods=['POST'])
-def set_servo_2():
+def set_servo_1():
     angle = request.form.get("angle")
     if angle is not None:
         # Here, you should call your servo control function
         Aero.set_servo_1(int(angle))
+        return jsonify(success=True)
+    else:
+        return jsonify(success=False, message="Invalid angle"), 400
+
+@app.route('/set_servo_2', methods=['POST'])
+def set_servo_2():
+    angle = request.form.get("angle")
+    if angle is not None:
+        # Here, you should call your servo control function
+        Aero.set_servo_2(int(angle))
+        return jsonify(success=True)
+    else:
+        return jsonify(success=False, message="Invalid angle"), 400
+
+@app.route('/set_servo_3', methods=['POST'])
+def set_servo_3():
+    angle = request.form.get("angle")
+    if angle is not None:
+        # Here, you should call your servo control function
+        Aero.set_servo_3(int(angle))
         return jsonify(success=True)
     else:
         return jsonify(success=False, message="Invalid angle"), 400
