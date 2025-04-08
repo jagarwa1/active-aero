@@ -12,50 +12,12 @@
     </style>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/all.min.css') }}">
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='orange-racer.png') }}">
 </head>
 <body>
     <h1>Active Aero Control</h1>
      
     <main>
-        <section class="servo-controls">
-            <h2>Manual Mode
-                    <label for="modeToggle">
-                        <input type="checkbox" id="modeToggle" checked>
-                    </label>
-            </h2>
-            <div>
-                <label for="wingAngleSlider">Wing Angle:</label>
-                <input type="range" id="wingAngleSlider" min="0" max="180" value="0">
-                <span id="currentAngle0">0</span>°
-            </div>
-            <div>
-                <label for="wingLeftSlider">Wing Left Angle:</label>
-                <input type="range" id="wingLeftSlider" min="0" max="180" value="0">
-                <span id="currentAngle1">0</span>°
-            </div>
-            <div>
-                <label for="wingRightSlider">Wing Right Angle:</label>
-                <input type="range" id="wingRightSlider" min="0" max="180" value="0">
-                <span id="currentAngle2">0</span>°
-            </div>
-            <div>
-                <label for="roofSlider">Roof Angle:</label>
-                <input type="range" id="roofSlider" min="0" max="180" value="0">
-                <span id="currentAngle3">0</span>°
-            </div>
-            <div>
-                <label for="roofSliderLeft">Roof Left Angle:</label>
-                <input type="range" id="roofSliderLeft" min="0" max="180" value="0">
-                <span id="currentAngle4">0</span>°
-            </div>
-            <div>
-                <label for="roofSliderRight">Roof Right Angle:</label>
-                <input type="range" id="roofSliderRight" min="0" max="180" value="0">
-                <span id="currentAngle5">0</span>°
-            </div>
-        
-        </section>
 
         <section class="sensor-data">
             <div style="margin-top: 20px;">
@@ -73,12 +35,60 @@
             <h3>Sensor Data</h3>
             <div id="sensorData">Loading...</div>
         </section>
+
+        <section class="servo-controls">
+            <section class="servo-controls-header">
+                <h2>Manual Mode
+                        <label for="modeToggle">
+                            <input type="checkbox" id="modeToggle" checked>
+                        </label>
+                </h2>
+                <div id="switch-group">
+                    <label class="switch" for="wingSliderSplitter">
+                        <input type="checkbox" id="wingSliderSplitter">
+                        <span class="slider round"></span>
+                    </label>
+                    <label class="switch" for="roofSliderSplitter">
+                        <input type="checkbox" id="roofSliderSplitter">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </section>
+            <div id="manualControls">
+                <div id="wingAngle">
+                    <label for="wingAngleSlider">Wing Angle: <span id="currentAngle0">0</span>°</label>
+                    <input type="range" id="wingAngleSlider" min="0" max="180" value="0">
+                </div>
+                <div id="wingLeft" style="display: none;">
+                    <label for="wingLeftSlider">Wing Left Angle: <span id="currentAngle1">0</span>°</label>
+                    <input type="range" id="wingLeftSlider" min="0" max="180" value="0">
+                </div>
+                <div id="wingRight" style="display: none;">
+                    <label for="wingRightSlider">Wing Right Angle: <span id="currentAngle2">0</span>°</label>
+                    <input type="range" id="wingRightSlider" min="0" max="180" value="0">
+                </div>
+                <div id="roofAngle">
+                    <label for="roofSlider">Roof Angle: <span id="currentAngle3">0</span>°</label>
+                    <input type="range" id="roofSlider" min="0" max="180" value="0">
+                </div>
+                <div id="roofLeft" style="display: none;">
+                    <label for="roofSliderLeft">Roof Left Angle: <span id="currentAngle4">0</span>°</label>
+                    <input type="range" id="roofSliderLeft" min="0" max="180" value="0">
+                </div>
+                <div id="roofRight" style="display: none;">
+                    <label for="roofSliderRight">Roof Right Angle: <span id="currentAngle5">0</span>°</label>
+                    <input type="range" id="roofSliderRight" min="0" max="180" value="0">
+                </div>
+            </div>
+        </section>
+        
         <section class="graphing">
             <div style="margin-top: 20px;">
             </div>
             <h3>Graphing</h3>
             <div id="graphData">Loading...</div>
         </section>
+
         <section class="logs">
             <div style="margin-top: 20px;">
                 <button id="toggleLogging">Enable Logging</button>
@@ -99,9 +109,9 @@
         const slider5 = document.getElementById("roofSliderLeft");
         const slider6 = document.getElementById("roofSliderRight");
 
-        let loggingEnabled = false;
-        let isCalibrating = false;
-        let intervalID = null;
+        var loggingEnabled = false;
+        var isCalibrating = false;
+        var sensorIntervalId = null;
 
         function updateSliderBackground(slider) {
             const val = (slider.value - slider.min) / (slider.max - slider.min) * 100;
@@ -134,13 +144,41 @@
 
         // handle mode toggle. hide slider depending on mode
         $("#modeToggle").change(function() {
-            let manual = $(this).is(":checked");
-            if (manual) {
+            let checked = $(this).is(":checked");
+            if (checked) {
                 $("#manualControls").show();
+                $("switch-group").show();
                 $.post("/set_mode", { mode: "manual" });
             } else {
                 $("#manualControls").hide();
+                $("switch-group").hide();
                 $.post("/set_mode", { mode: "auto" });
+            }
+        });
+
+        $("#wingSliderSplitter").change(function() {
+            let checked = $(this).is(":checked");
+            if (checked) {
+                $("#wingAngle").hide();
+                $("#wingLeft").show();
+                $("#wingRight").show();
+            } else {
+                $("#wingAngle").show();
+                $("#wingLeft").hide();
+                $("#wingRight").hide();
+            }
+        });
+
+        $("#roofSliderSplitter").change(function() {
+            let checked = $(this).is(":checked");
+            if (checked) {
+                $("#roofAngle").hide();
+                $("#roofLeft").show();
+                $("#roofRight").show();
+            } else {
+                $("#roofAngle").show();
+                $("#roofLeft").hide();
+                $("#roofRight").hide();
             }
         });
 
@@ -184,39 +222,19 @@
             $("#currentAngle5").text(angle);
             $.post("/set_servo_3", { angle: angle });
         });
-        
-        // Poll the sensor endpoint every second to update the display
-        function updateSensorData(){
-            if (isCalibrating) return; // skip fetching during calibration
-
-            $.getJSON("/sensor", function(data){
-                // render some html
-                var html = "<p><strong>Accelerometer:</strong><br>" +
-                "X: " + data.accel_x.toFixed(2) + "<br>" +
-                "Y: " + data.accel_y.toFixed(2) + "<br>" +
-                "Z: " + data.accel_z.toFixed(2) + "</p>";
-                html += "<p><strong>Gyroscope:</strong><br>" +
-                "X: " + data.gyro_x.toFixed(2) + "<br>" +
-                "Y: " + data.gyro_y.toFixed(2) + "<br>" +
-                "Z: " + data.gyro_z.toFixed(2) + "</p>";
-
-                $("#sensorData").html(html);
-            });
-        }
 
         // calibrate button
         function calibrate() {
             isCalibrating = true;
-            console.log("1", sensorIntervalId)
             clearInterval(sensorIntervalId);
             sensorIntervalId = null;
-            console.log("2", sensorIntervalId)
 
             $("#calibrationIndicator").css("background-color", "orange");
             $("#calibrationButton").prop("disabled", true);
             $("#calibrationStatus").text("Calibrating...");
             $.post("/calibrate", function(response) {
                 $("#calibrationStatus").text("Calibration success: " + response.message);
+                $("#calibrationButton").prop("disabled", false);
                 $("#calibrationIndicator").css("background-color", "green");
                 isCalibrating = false;
 
@@ -227,9 +245,31 @@
                 isCalibrating = false;
             });
             sensorIntervalId = setInterval(updateSensorData, 1000); // restart the interval
-            console.log("3", sensorIntervalId)
         }
         // end calibrate button
+
+        // pad values so they align visually
+        function pad(value) {
+            return value.toString().padStart(6, ' ');
+        }
+        // get sensor data to update the display
+        function updateSensorData(){
+            if (isCalibrating) return; // skip fetching during calibration
+
+            $.getJSON("/sensor", function(data){
+                // render some html
+                var html = "<p><strong>Accelerometer:</strong><br>" +
+                "X: " + pad(data.accel_x.toFixed(2)) + "<br>" +
+                "Y: " + pad(data.accel_y.toFixed(2)) + "<br>" +
+                "Z: " + pad(data.accel_z.toFixed(2)) + "</p>";
+                html += "<p><strong>Gyroscope:</strong><br>" +
+                "X: " + pad(data.gyro_x.toFixed(2)) + "<br>" +
+                "Y: " + pad(data.gyro_y.toFixed(2)) + "<br>" +
+                "Z: " + pad(data.gyro_z.toFixed(2)) + "</p>";
+
+                $("#sensorData").html(html);
+            });
+        }
 
         // logging button
         $("#toggleLogging").on("click", function() {
@@ -242,24 +282,6 @@
             $.post("/set_logging", { logging: loggingEnabled ? "on" : "off" });
         });
         // end logging button
-
-        // calibrate button
-        function calibrate() {
-            isCalibrating = true;
-            clearInterval(intervalID);
-            intervalID = null;
-
-            $("#calibrationButton").prop("disabled", true);
-            $("#calibrationStatus").text("Calibrating...");
-            $.post("/calibrate", function(response) {
-                $("#calibrationStatus").text("Calibration success.");
-            }).fail(function() {
-                $("#calibrationStatus").text("Calibration failed.");
-                $("#calibrationButton").prop("disabled", false);
-            });
-            isCalibrating = false;
-            intervalID = setInterval(updateSensorData, 500);
-        }
 
         // list logs
         function loadLogs() {
@@ -286,7 +308,7 @@
         updateSliderBackground(slider6);
         
         loadLogs();
-        // calibrate();
+        calibrate();
                 
         </script>
     </body>
