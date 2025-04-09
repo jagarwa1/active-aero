@@ -309,13 +309,13 @@ def WingMove(accel_x, accel_y, priority):
     match priority:
         case 0:
         # Make Accel Force Graph, log data for Min-Max and develop function
-            WingAngle = -72*math.ceil(accel_x)
+            WingAngle = -72*math.floor(round(accel_x,4))
             if WingAngle >= 180:
                 WingAngle = 180
             elif WingAngle <= 0:
                 WingAngle = 0
             
-            if accel_x >= 1.5:
+            if accel_x <= -1.5:
                 HoodAngle = 180
             else:
                 HoodAngle = 0
@@ -328,12 +328,8 @@ def WingMove(accel_x, accel_y, priority):
 
         case 1:
         # Make Accel Force Graph, log data for Min-Max and develop function
-            WingAngleY = 72*round(accel_x, 4)
-
-            if abs(WingAngleY) >= 30:
-                WingAngleY2 = -WingAngleY
-            else:
-                WingAngleY2 = 0
+            WingAngleY = 72*math.floor(round(accel_y, 4))
+			WingAngleY2 = -WingAngleY
 
             if WingAngleY >= 180:
                 WingAngleY = 180
