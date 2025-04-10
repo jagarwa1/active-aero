@@ -1,0 +1,1 @@
+journalctl -fu active-aero-server

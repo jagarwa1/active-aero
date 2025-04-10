@@ -1,0 +1,1 @@
+sudo nmcli dev wifi hotspot ifname wlan0 ssid JaiFi password clemsontigers

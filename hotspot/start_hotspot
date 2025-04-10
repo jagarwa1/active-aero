@@ -1,0 +1,1 @@
+sudo nmcli con up Arrow-Hotspot

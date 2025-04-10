@@ -228,7 +228,7 @@ def view_log_table(filename):
     """)
 
 # set the servo angle in maual mode
-@app.route("/set_both_servos", methods=['POST'])
+@app.route("/set_all_servos", methods=['POST'])
 def servo():
     try:
         angle = float(request.form.get("angle"))
@@ -237,11 +237,28 @@ def servo():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 400
 
+@app.route("/set_wing_servos", methods=['POST'])
+def servo_wing():
+    try:
+        angle = float(request.form.get("angle"))
+        Aero.set_wing_angle(angle, angle)
+        return jsonify({"status": "success", "angle": angle})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+
+@app.route("/set_roof_servos", methods=['POST'])
+def servo_roof():
+    try:
+        angle = float(request.form.get("angle"))
+        Aero.set_roof_angle(angle, angle)
+        return jsonify({"status": "success", "angle": angle})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+
 @app.route('/set_servo_0', methods=['POST'])
 def set_servo_0():
     angle = request.form.get("angle")
     if angle is not None:
-        # Here, you should call your servo control function
         Aero.set_servo_0(int(angle))
         return jsonify(success=True)
     else:
@@ -251,7 +268,6 @@ def set_servo_0():
 def set_servo_1():
     angle = request.form.get("angle")
     if angle is not None:
-        # Here, you should call your servo control function
         Aero.set_servo_1(int(angle))
         return jsonify(success=True)
     else:
@@ -261,7 +277,6 @@ def set_servo_1():
 def set_servo_2():
     angle = request.form.get("angle")
     if angle is not None:
-        # Here, you should call your servo control function
         Aero.set_servo_2(int(angle))
         return jsonify(success=True)
     else:
@@ -271,7 +286,6 @@ def set_servo_2():
 def set_servo_3():
     angle = request.form.get("angle")
     if angle is not None:
-        # Here, you should call your servo control function
         Aero.set_servo_3(int(angle))
         return jsonify(success=True)
     else:

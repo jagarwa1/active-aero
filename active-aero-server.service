@@ -1,0 +1,16 @@
+# edited 4/10/25 2:15pm
+[Unit]
+Description=Active Aerodynamics Server
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/benchh1/active-aero/server/app.py
+WorkingDirectory=/home/benchh1/active-aero/
+User=benchh1
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

@@ -15,8 +15,7 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='orange-racer.png') }}">
 </head>
 <body>
-    <h1>Active Aero Control</h1>
-     
+    <h1><img src="/static/clemson.png" alt="clemson-paw" class="clemson-paw">Active Aero Control</h1>
     <main>
 
         <section class="sensor-data">
@@ -38,11 +37,13 @@
 
         <section class="servo-controls">
             <section class="servo-controls-header">
-                <h2>Manual Mode
-                        <label for="modeToggle">
-                            <input type="checkbox" id="modeToggle" checked>
-                        </label>
+                <h2>
+                    Manual Mode
+                    <label for="modeToggle">
+                        <input type="checkbox" id="modeToggle" checked>
+                    </label>
                 </h2>
+                
                 <div id="switch-group">
                     <label class="switch" for="wingSliderSplitter">
                         <input type="checkbox" id="wingSliderSplitter">
@@ -59,27 +60,27 @@
             
             <div id="manualControls">
                 <div id="wingAngle">
-                    <label for="wingAngleSlider">Wing Angle: <span id="currentAngle0">0</span>°</label>
+                    <label for="wingAngleSlider" class="slider-label">Wing Angle: <span id="currentAngle0">0</span>°</label>
                     <input type="range" id="wingAngleSlider" min="0" max="180" value="0">
                 </div>
                 <div id="wingLeft" style="display: none;">
-                    <label for="wingLeftSlider">Wing Left Angle: <span id="currentAngle1">0</span>°</label>
+                    <label for="wingLeftSlider" class="slider-label">Wing Left Angle: <span id="currentAngle1">0</span>°</label>
                     <input type="range" id="wingLeftSlider" min="0" max="180" value="0">
                 </div>
                 <div id="wingRight" style="display: none;">
-                    <label for="wingRightSlider">Wing Right Angle: <span id="currentAngle2">0</span>°</label>
+                    <label for="wingRightSlider" class="slider-label">Wing Right Angle: <span id="currentAngle2">0</span>°</label>
                     <input type="range" id="wingRightSlider" min="0" max="180" value="0">
                 </div>
                 <div id="roofAngle">
-                    <label for="roofSlider">Roof Angle: <span id="currentAngle3">0</span>°</label>
+                    <label for="roofSlider" class="slider-label">Roof Angle: <span id="currentAngle3">0</span>°</label>
                     <input type="range" id="roofSlider" min="0" max="180" value="0">
                 </div>
                 <div id="roofLeft" style="display: none;">
-                    <label for="roofSliderLeft">Roof Left Angle: <span id="currentAngle4">0</span>°</label>
+                    <label for="roofSliderLeft" class="slider-label">Roof Left Angle: <span id="currentAngle4">0</span>°</label>
                     <input type="range" id="roofSliderLeft" min="0" max="180" value="0">
                 </div>
                 <div id="roofRight" style="display: none;">
-                    <label for="roofSliderRight">Roof Right Angle: <span id="currentAngle5">0</span>°</label>
+                    <label for="roofSliderRight" class="slider-label">Roof Right Angle: <span id="currentAngle5">0</span>°</label>
                     <input type="range" id="roofSliderRight" min="0" max="180" value="0">
                 </div>
             </div>
@@ -99,12 +100,12 @@
             </div>
         </section>    
         
-        <section class="graphing">
+        <!--section class="graphing">
             <div style="margin-top: 20px;">
             </div>
             <h2>Graphing</h2>
             <div id="graphData">Loading...</div>
-        </section>
+        </section-->
     </main>      
 
     <script>
@@ -193,7 +194,7 @@
         $("#wingAngleSlider").on("input change", function(){
             var angle = $(this).val();
             $("#currentAngle0").text(angle);
-            $.post("/set_both_servos", { angle: angle });
+            $.post("/set_wing_servos", { angle: angle });
         });
 
         // Update servo 1 angle when the first slider is moved
@@ -213,7 +214,7 @@
         $("#roofSlider").on("input change", function(){
             var angle = $(this).val();
             $("#currentAngle3").text(angle);
-            $.post("/set_both_servos", { angle: angle });
+            $.post("/set_roof_servos", { angle: angle });
         });
 
         // Update servo 2 angle when the second slider is moved
@@ -251,7 +252,7 @@
                 $("#calibrationIndicator").css("background-color", "red");
                 isCalibrating = false;
             });
-            sensorIntervalId = setInterval(updateSensorData, 1000); // restart the interval
+            sensorIntervalId = setInterval(updateSensorData, 500); // restart the interval
         }
         // end calibrate button
 

@@ -70,38 +70,40 @@ def get_sensor_data():
 
 def set_servo_angle(angle1,angle2,angle3,angle4):
     try:
-        kit.servo[0].angle = 180 - angle1
-        kit.servo[1].angle = angle2
-        kit.servo[2].angle = angle3
-        kit.servo[3].angle = 180 - angle4
+        set_wing_angle(angle1, angle2)
+        set_roof_angle(angle3, angle4)
     except Exception as e: print("Error setting servo angle:", e)
+
+def set_wing_angle(angle1, angle2):
+    kit.servo[0].angle = angle1
+    kit.servo[1].angle = 180 - angle2
+
+def set_roof_angle(angle3, angle4):
+    kit.servo[2].angle = angle3
+    kit.servo[3].angle = angle4
 
 # control the angle of servo0 
 def set_servo_0(angle):
     try:
         kit.servo[0].angle = 180 - angle
-        return angle
     except Exception as e: print("Error setting servo0 angle:", e)
 
 # control the angle of servo1
 def set_servo_1(angle):
     try:
         kit.servo[1].angle = angle
-        return angle
     except Exception as e: print("Error setting servo1 angle:", e)
 
 # control the angle of servo1
 def set_servo_2(angle):
     try:
         kit.servo[2].angle = angle
-        return angle
     except Exception as e: print("Error setting servo2 angle:", e)
 
 # control the angle of servo1
 def set_servo_3(angle):
     try:
-        kit.servo[3].angle = 180 - angle
-        return angle
+        kit.servo[3].angle = angle
     except Exception as e: print("Error setting servo3 angle:", e)
 
 # Log data to CSV
@@ -309,18 +311,18 @@ def WingMove(accel_x, accel_y, priority):
     match priority:
         case 0:
         # Make Accel Force Graph, log data for Min-Max and develop function
-            WingAngle = -72*math.floor(round(accel_x,4))
+            WingAngle = math.floor(110 * round(accel_x,4))
             if WingAngle >= 180:
                 WingAngle = 180
             elif WingAngle <= 0:
                 WingAngle = 0
             
-            if accel_x <= -1.5:
+            if accel_x <= 1.5:
                 HoodAngle = 180
             else:
                 HoodAngle = 0
                 
-            set_servo_angle(WingAngle,WingAngle,HoodAngle,HoodAngle)
+            set_servo_angle(WingAngle, WingAngle, HoodAngle, HoodAngle)
             Angle1 = WingAngle
             Angle2 = WingAngle
             Angle3 = HoodAngle
@@ -328,8 +330,8 @@ def WingMove(accel_x, accel_y, priority):
 
         case 1:
         # Make Accel Force Graph, log data for Min-Max and develop function
-            WingAngleY = 72*math.floor(round(accel_y, 4))
-			WingAngleY2 = -WingAngleY
+            WingAngleY = math.floor(110 * round(accel_y, 4))
+            WingAngleY2 = -WingAngleY
 
             if WingAngleY >= 180:
                 WingAngleY = 180
