@@ -317,7 +317,7 @@ def WingMove(accel_x, accel_y, priority):
             elif WingAngle <= 0:
                 WingAngle = 0
             
-            if accel_x >= 1.5:
+            if WingAngle >= 100:
                 HoodAngle = 180
             else:
                 HoodAngle = 0

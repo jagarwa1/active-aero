@@ -178,7 +178,10 @@ def sensor():
             latest_sensor_data.get("gyro_x"),
             latest_sensor_data.get("gyro_y"),
             latest_sensor_data.get("gyro_z"),
-            curr_angle
+            Angle1,
+            Angle2,
+            Angle3,
+            Angle4
         )
     return jsonify(latest_sensor_data)
 
