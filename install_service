@@ -1,0 +1,5 @@
+sudo cp active-aero-server.service /etc/systemd/system/
+sudo systemctl daemon-reload 
+sudo systemctl enable active-aero-server.service 
+sudo systemctl start active-aero-server.service 
+sudo systemctl status active-aero-server.service 
