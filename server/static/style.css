@@ -10,7 +10,7 @@ body {
     background-color: #f4f4f4;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    min-height: 100%;
 }
 
 .container {
@@ -61,20 +61,8 @@ section {
     border-bottom: 0px;
     background-color: none;
     box-shadow: 0 0px 0px;
-}
-
-.servo-controls-header h2 {
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-
-#switch-group {
-    display: flex;
-    gap: 1.5rem;
-    flex-wrap: wrap; /* if you want them to wrap on smaller screens */
 }
 
 @media (min-width: 768px) {
@@ -114,7 +102,7 @@ button:hover {
 }
 
 .log-list-container {
-    max-height: 200px; /* Adjust as needed */
+    max-height: 250px; /* Adjust as needed */
     overflow-y: auto;
     border: 1px solid none;
     padding: 10px;
@@ -146,7 +134,26 @@ button i {
 
 .slider-label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+.servo-controls input[type="checkbox"] {
+    display: inline-block; 
+    width: 20px; 
+    text-align: right; 
+    margin-right: 10px; 
+}
+
+#wingSliderSplitter, #roofSliderSplitter, #wingSliderSplitter-label, #roofSliderSplitter-label {
+    display: none;
+}
+  
+#modeToggle:checked ~ #wingSliderSplitter, #modeToggle:checked ~ #roofSliderSplitter {
+    display: inline-block;
+}
+#modeToggle:checked ~ #wingSliderSplitter-label, #modeToggle:checked ~ #roofSliderSplitter-label {
+    display: inline-block;
 }
 
 input[type=range] {
@@ -201,73 +208,3 @@ ul li a {
 ul li a:hover {
     text-decoration: underline;
 }
-
-/* TOGGLE SWITCH STYLING */
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 45px;
-    height: 26px;
-}
-
-/* Hide default HTML checkbox */
-.switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.switch-label {
-    position: relative;
-    top: 2px;
-}
-
-/* The slider */
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ccc;
-    -webkit-transition: .4s;
-    transition: .4s;
-}
-
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 18px;
-    width: 18px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    -webkit-transition: .4s;
-    transition: .4s;
-}
-
-input:checked + .slider {
-    background-color: #2196F3;
-}
-
-input:focus + .slider {
-    box-shadow: 0 0 1px #2196F3;
-}
-
-input:checked + .slider:before {
-    -webkit-transform: translateX(18px);
-    -ms-transform: translateX(18px);
-    transform: translateX(18px);
-}
-
-/* Rounded sliders */
-.slider.round {
-    border-radius: 34px;
-}
-
-.slider.round:before {
-    border-radius: 50%;
-}
-
-/* END SWITCH STYLING */

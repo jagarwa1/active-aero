@@ -9,11 +9,7 @@ import csv
 import threading
 import random
 from flask import Flask, render_template, render_template_string, request, jsonify, send_from_directory
-import RPi.GPIO as GPIO
-import smbus2
-from adafruit_servokit import ServoKit
 from datetime import datetime
-
 
 # Initialize the sensor hardware
 Aero.init_gyro_accel()
@@ -82,12 +78,9 @@ def sensor_update_loop():
 # background thread for auto control
 def auto_mode_loop(flag):
     global accel_x_offset, accel_y_offset, accel_z_offset, gyro_x_offset, gyro_y_offset, gyro_z_offset
-    global curr_angle
-    new_angle = 0
     while not flag.is_set():
         if auto_state['auto_mode']:
             accel_x, accel_y, priority = Aero.PriorityDefine(accel_x_offset, accel_y_offset)
-            # = control_wing(curr_angle,accel_x_offset,accel_y_offset,accel_z_offset,gyro_x_offset,gyro_y_offset,gyro_z_offset)
             Angle1, Angle2, Angle3, Angle4 = Aero.WingMove(accel_x, accel_y, priority)
             # print("angle1: ", Angle1)
             # print("angle2: ", Angle2)
@@ -169,7 +162,6 @@ def set_logging():
 def sensor():
     if Aero.logging_active and not auto_state["auto_mode"]:
         global latest_sensor_data
-        global curr_angle
         Aero.log_data(
             datetime.now().strftime('%H:%M:%S.%f'),
             latest_sensor_data.get("accel_x"),
@@ -183,7 +175,20 @@ def sensor():
             Angle3,
             Angle4
         )
-    return jsonify(latest_sensor_data)
+    
+    data_with_angles = {
+            "accel_x": latest_sensor_data['accel_x'], 
+            "accel_y": latest_sensor_data['accel_y'], 
+            "accel_z": latest_sensor_data['accel_z'], 
+            "gyro_x": latest_sensor_data['gyro_x'], 
+            "gyro_y": latest_sensor_data['gyro_y'], 
+            "gyro_z": latest_sensor_data['gyro_z'], 
+            "Angle1": Angle1,
+            "Angle2": Angle2,
+            "Angle3": Angle3,
+            "Angle4": Angle4
+    }
+    return jsonify(data_with_angles)
 
 # list the log files
 @app.route('/logs')
@@ -321,4 +326,4 @@ if __name__ == "__main__":
     try:
         app.run(host="0.0.0.0", port=5000, debug=True)
     finally:
-        GPIO.cleanup()
+        print("exiting app")

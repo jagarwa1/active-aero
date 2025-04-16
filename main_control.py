@@ -2,12 +2,12 @@
 import time
 import numpy as np
 import math
+import random
 import tkinter as tk
 from tkinter import ttk
 import csv
 from datetime import datetime
 import argparse
-import RPi.GPIO as GPIO
 import smbus2
 import sys
 import os
@@ -67,7 +67,6 @@ def get_sensor_data():
 
 # Control both servos of the wing angle
 # set_servo_angle(WingAngleY, WingAngleY2, HoodAngle, HoodAngle)
-
 def set_servo_angle(angle1,angle2,angle3,angle4):
     try:
         set_wing_angle(angle1, angle2)
@@ -385,7 +384,7 @@ if __name__ == "__main__":
             testval = 0
             while True:
                 accel_x, accel_y, priority = PriorityDefine(accel_x_offset, accel_y_offset)
-                # = control_wing(curr_angle,accel_x_offset,accel_y_offset,accel_z_offset,gyro_x_offset,gyro_y_offset,gyro_z_offset)
+                # new_angle = control_wing(curr_angle,accel_x_offset,accel_y_offset,accel_z_offset,gyro_x_offset,gyro_y_offset,gyro_z_offset)
                 Angle1,Angle2,Angle3,Angle4 = WingMove(accel_x,accel_y,priority)
                 curr_angle = new_angle
 
@@ -393,5 +392,5 @@ if __name__ == "__main__":
         pass
     finally:
         print("\n\nstopping execution\n\n")
-        # set_servo_angle(180)
-        GPIO.cleanup()
+        #set_servo_angle(180)
+        #GPIO.cleanup()

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Active Aero Control</title>
     <script src="/static/jquery-3.6.0.min.js"></script>
+    <script src="/static/chart.umd.js"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 30px; }
         h1 { margin-bottom: 20px; }
@@ -36,54 +37,53 @@
         </section>
 
         <section class="servo-controls">
-            <section class="servo-controls-header">
-                <h2>
-                    Manual Mode
-                    <label for="modeToggle">
-                        <input type="checkbox" id="modeToggle" checked>
-                    </label>
-                </h2>
-                
-                <div id="switch-group">
-                    <label class="switch" for="wingSliderSplitter">
-                        <input type="checkbox" id="wingSliderSplitter">
-                        <span class="slider round"></span>
-                        <span class="switch-label">Wing</span>
-                    </label>
-                    <label class="switch" for="roofSliderSplitter">
-                        <input type="checkbox" id="roofSliderSplitter">
-                        <span class="slider round"></span>
-                        <span class="switch-label">Roof</span>
-                    </label>
-                </div>
-            </section>
-            
+            <h2>Control</h2>
+            <label for="modeToggle">Manual Mode</label>
+            <input class="modeToggle" type="checkbox" id="modeToggle" checked>
+
+            <label for="wingSliderSplitter" id="wingSliderSplitter-label">Split Wing</label>
+            <input type="checkbox" id="wingSliderSplitter">
+
+            <label for="roofSliderSplitter" id="roofSliderSplitter-label">Split Roof</label>
+            <input type="checkbox" id="roofSliderSplitter">
+
             <div id="manualControls">
                 <div id="wingAngle">
                     <label for="wingAngleSlider" class="slider-label">Wing Angle: <span id="currentAngle0">0</span>°</label>
                     <input type="range" id="wingAngleSlider" min="0" max="180" value="0">
                 </div>
+            
                 <div id="wingLeft" style="display: none;">
                     <label for="wingLeftSlider" class="slider-label">Wing Left Angle: <span id="currentAngle1">0</span>°</label>
                     <input type="range" id="wingLeftSlider" min="0" max="180" value="0">
                 </div>
+            
                 <div id="wingRight" style="display: none;">
                     <label for="wingRightSlider" class="slider-label">Wing Right Angle: <span id="currentAngle2">0</span>°</label>
                     <input type="range" id="wingRightSlider" min="0" max="180" value="0">
                 </div>
+            
                 <div id="roofAngle">
                     <label for="roofSlider" class="slider-label">Roof Angle: <span id="currentAngle3">0</span>°</label>
                     <input type="range" id="roofSlider" min="0" max="180" value="0">
                 </div>
+            
                 <div id="roofLeft" style="display: none;">
                     <label for="roofSliderLeft" class="slider-label">Roof Left Angle: <span id="currentAngle4">0</span>°</label>
                     <input type="range" id="roofSliderLeft" min="0" max="180" value="0">
                 </div>
+
                 <div id="roofRight" style="display: none;">
                     <label for="roofSliderRight" class="slider-label">Roof Right Angle: <span id="currentAngle5">0</span>°</label>
                     <input type="range" id="roofSliderRight" min="0" max="180" value="0">
                 </div>
+            
             </div>
+
+            <div id="autoModeInfo" hidden>
+                <canvas id="chart" width="70%" height="50%"></canvas>
+            </div>
+
         </section>
         
         <section class="logs">
@@ -150,16 +150,84 @@
             updateSliderBackground(this);
         });
 
+        var ctx = document.getElementById('chart').getContext('2d');
+        var chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+            label: 'Angle1',
+            data: [],
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 1
+            }, {
+            label: 'Angle2',
+            data: [],
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+            }, {
+            label: 'Angle3',
+            data: [],
+            backgroundColor: 'rgba(255, 206, 86, 0.2)',
+            borderColor: 'rgba(255, 206, 86, 1)',
+            borderWidth: 1
+            }, {
+            label: 'Angle4',
+            data: [],
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1
+            }]
+        },
+        options: {
+        scales: {
+            y: {
+                ticks: {
+                    callback: function(value, index, ticks) {
+                        return value + '°';
+                    
+                    }
+                }
+            }
+        }
+        }});
+
+        function getcurrentTime() {
+            const date = new Date();
+            return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
+        }
+
+        const numPoints = 10
+        // we want to create a sliding window to only display somewhat live data
+        function updateChartData(data) {
+            // remove old data points
+            chart.data.labels.splice(0, chart.data.labels.length - numPoints);
+            chart.data.datasets[0].data.splice(0, chart.data.datasets[0].data.length - numPoints);
+            chart.data.datasets[1].data.splice(0, chart.data.datasets[1].data.length - numPoints);
+            chart.data.datasets[2].data.splice(0, chart.data.datasets[2].data.length - numPoints);
+            chart.data.datasets[3].data.splice(0, chart.data.datasets[3].data.length - numPoints);
+
+            // add data point
+            chart.data.labels.push(getcurrentTime());
+            chart.data.datasets[0].data.push(data.Angle1);
+            chart.data.datasets[1].data.push(data.Angle2);
+            chart.data.datasets[2].data.push(data.Angle3);
+            chart.data.datasets[3].data.push(data.Angle4);
+
+            chart.update();
+        }
         // handle mode toggle. hide slider depending on mode
         $("#modeToggle").change(function() {
             let checked = $(this).is(":checked");
             if (checked) {
                 $("#manualControls").show();
-                $("switch-group").show();
+                $("#autoModeInfo").hide();
                 $.post("/set_mode", { mode: "manual" });
             } else {
                 $("#manualControls").hide();
-                $("switch-group").hide();
+                $("#autoModeInfo").show();
                 $.post("/set_mode", { mode: "auto" });
             }
         });
@@ -190,44 +258,50 @@
             }
         });
 
-        // Update servo angle when the slider is moved
+		// scale the value of 0-40 degrees to 0-180 degrees to control the backend servos
+		function scaleValue(value) {
+		  return Math.round(value / 4.5); // mapping from 40 to 180
+		}
+		
+        // Update wing angle when the slider is moved
         $("#wingAngleSlider").on("input change", function(){
             var angle = $(this).val();
-            $("#currentAngle0").text(angle);
+            $("#currentAngle0").text(scaleValue(angle));
             $.post("/set_wing_servos", { angle: angle });
         });
 
         // Update servo 1 angle when the first slider is moved
         $("#wingRightSlider").on("input change", function(){
             var angle = $(this).val();
-            $("#currentAngle2").text(angle);
+            $("#currentAngle2").text(scaleValue(angle));
             $.post("/set_servo_0", { angle: angle });
         });
 
         // Update servo 2 angle when the second slider is moved
         $("#wingLeftSlider").on("input change", function(){
             var angle = $(this).val();
-            $("#currentAngle1").text(angle);
+            $("#currentAngle1").text(scaleValue(angle));
             $.post("/set_servo_1", { angle: angle });
         });
-
+        
+		// update the roof angle
         $("#roofSlider").on("input change", function(){
             var angle = $(this).val();
-            $("#currentAngle3").text(angle);
+            $("#currentAngle3").text(scaleValue(angle));
             $.post("/set_roof_servos", { angle: angle });
         });
 
-        // Update servo 2 angle when the second slider is moved
+        // Update servo 3 angle when the slider is moved
         $("#roofSliderLeft").on("input change", function(){
             var angle = $(this).val();
-            $("#currentAngle4").text(angle);
+            $("#currentAngle4").text(scaleValue(angle));
             $.post("/set_servo_2", { angle: angle });
         });
 
-        // Update servo 2 angle when the second slider is moved
+        // Update servo 4 angle when the slider is moved
         $("#roofSliderRight").on("input change", function(){
             var angle = $(this).val();
-            $("#currentAngle5").text(angle);
+            $("#currentAngle5").text(scaleValue(angle));
             $.post("/set_servo_3", { angle: angle });
         });
 
@@ -252,7 +326,7 @@
                 $("#calibrationIndicator").css("background-color", "red");
                 isCalibrating = false;
             });
-            sensorIntervalId = setInterval(updateSensorData, 500); // restart the interval
+            sensorIntervalId = setInterval(updateSensorData, 300); // restart the interval
         }
         // end calibrate button
 
@@ -260,6 +334,7 @@
         function pad(value) {
             return value.toString().padStart(6, ' ');
         }
+
         // get sensor data to update the display
         function updateSensorData(){
             if (isCalibrating) return; // skip fetching during calibration
@@ -276,6 +351,15 @@
                 "Z: " + pad(data.gyro_z.toFixed(2)) + "</p>";
 
                 $("#sensorData").html(html);
+                
+                // html = "<p><strong>Angles:</strong><br>" +
+                //         "Angle1: " + pad(data.Angle1.toFixed(2)) + "<br>" +
+                //         "Angle2: " + pad(data.Angle2.toFixed(2)) + "<br>" +
+                //         "Angle3: " + pad(data.Angle3.toFixed(2)) + "<br>" +
+                //         "Angle4: " + pad(data.Angle4.toFixed(2)) + "</p>";
+                // $("#angle-data").html(html);
+
+                updateChartData(data)
             });
         }
 
