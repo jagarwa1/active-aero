@@ -8,6 +8,7 @@ import time
 import csv
 import threading
 import random
+#import RPi.GPIO as GPIO
 from flask import Flask, render_template, render_template_string, request, jsonify, send_from_directory
 from datetime import datetime
 
@@ -61,6 +62,7 @@ def sensor_update_loop():
             "gyro_y": gy - gyro_y_offset,
             "gyro_z": gz - gyro_z_offset
         }
+        # if logging is active and it is in manual mode
         if Aero.logging_active and not auto_state["auto_mode"]:
             Aero.log_data(datetime.now().strftime('%H:%M:%S.%f'), 
             latest_sensor_data['accel_x'], 
@@ -78,6 +80,7 @@ def sensor_update_loop():
 # background thread for auto control
 def auto_mode_loop(flag):
     global accel_x_offset, accel_y_offset, accel_z_offset, gyro_x_offset, gyro_y_offset, gyro_z_offset
+    global Angle1, Angle2, Angle3, Angle4
     while not flag.is_set():
         if auto_state['auto_mode']:
             accel_x, accel_y, priority = Aero.PriorityDefine(accel_x_offset, accel_y_offset)
@@ -324,6 +327,6 @@ if __name__ == "__main__":
     sensor_thread.daemon = True
     sensor_thread.start()
     try:
-        app.run(host="0.0.0.0", port=5000, debug=True)
+        app.run(host="0.0.0.0", port=5000)
     finally:
         print("exiting app")

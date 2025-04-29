@@ -33,7 +33,7 @@
                 <p id="calibrationStatus"></p>
             </div>
             <h2>Sensor Data</h2>
-            <div id="sensorData">Loading...</div>
+            <div id="sensorData">Press Calibrate to Begin...</div>
         </section>
 
         <section class="servo-controls">
@@ -81,7 +81,7 @@
             </div>
 
             <div id="autoModeInfo" hidden>
-                <canvas id="chart" width="70%" height="50%"></canvas>
+                <canvas id="chart" width="70%" height="70%"></canvas>
             </div>
 
         </section>
@@ -156,25 +156,25 @@
         data: {
             labels: [],
             datasets: [{
-            label: 'Angle1',
+            label: 'Wing Right',
             data: [],
             backgroundColor: 'rgba(255, 99, 132, 0.2)',
             borderColor: 'rgba(255, 99, 132, 1)',
             borderWidth: 1
             }, {
-            label: 'Angle2',
+            label: 'Wing Left',
             data: [],
             backgroundColor: 'rgba(54, 162, 235, 0.2)',
             borderColor: 'rgba(54, 162, 235, 1)',
             borderWidth: 1
             }, {
-            label: 'Angle3',
+            label: 'Roof Left',
             data: [],
             backgroundColor: 'rgba(255, 206, 86, 0.2)',
             borderColor: 'rgba(255, 206, 86, 1)',
             borderWidth: 1
             }, {
-            label: 'Angle4',
+            label: 'Roof Right',
             data: [],
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
             borderColor: 'rgba(75, 192, 192, 1)',
@@ -184,40 +184,18 @@
         options: {
         scales: {
             y: {
-                ticks: {
-                    callback: function(value, index, ticks) {
-                        return value + '°';
-                    
-                    }
-                }
+                    max: 40,
+                    min: 0
             }
         }
         }});
 
+        // parse and format the date
         function getcurrentTime() {
             const date = new Date();
-            return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
+            return `${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
         }
 
-        const numPoints = 10
-        // we want to create a sliding window to only display somewhat live data
-        function updateChartData(data) {
-            // remove old data points
-            chart.data.labels.splice(0, chart.data.labels.length - numPoints);
-            chart.data.datasets[0].data.splice(0, chart.data.datasets[0].data.length - numPoints);
-            chart.data.datasets[1].data.splice(0, chart.data.datasets[1].data.length - numPoints);
-            chart.data.datasets[2].data.splice(0, chart.data.datasets[2].data.length - numPoints);
-            chart.data.datasets[3].data.splice(0, chart.data.datasets[3].data.length - numPoints);
-
-            // add data point
-            chart.data.labels.push(getcurrentTime());
-            chart.data.datasets[0].data.push(data.Angle1);
-            chart.data.datasets[1].data.push(data.Angle2);
-            chart.data.datasets[2].data.push(data.Angle3);
-            chart.data.datasets[3].data.push(data.Angle4);
-
-            chart.update();
-        }
         // handle mode toggle. hide slider depending on mode
         $("#modeToggle").change(function() {
             let checked = $(this).is(":checked");
@@ -258,7 +236,7 @@
             }
         });
 
-		// scale the value of 0-40 degrees to 0-180 degrees to control the backend servos
+		// scale the value of 0-180 degrees to 0-40 degrees to control the backend servos
 		function scaleValue(value) {
 		  return Math.round(value / 4.5); // mapping from 40 to 180
 		}
@@ -332,7 +310,27 @@
 
         // pad values so they align visually
         function pad(value) {
-            return value.toString().padStart(6, ' ');
+            return ("        " + value).slice(-5); // returns "  123" (with two spaces
+        }
+        
+        const numPoints = 20
+        // we want to create a sliding window to only display somewhat live data
+        function updateChartData(data) {
+            // remove old data points
+            chart.data.labels.splice(0, chart.data.labels.length - numPoints);
+            chart.data.datasets[0].data.splice(0, chart.data.datasets[0].data.length - numPoints);
+            chart.data.datasets[1].data.splice(0, chart.data.datasets[1].data.length - numPoints);
+            chart.data.datasets[2].data.splice(0, chart.data.datasets[2].data.length - numPoints);
+            chart.data.datasets[3].data.splice(0, chart.data.datasets[3].data.length - numPoints);
+
+            // add data point
+            chart.data.labels.push(getcurrentTime());
+            chart.data.datasets[0].data.push(scaleValue(data.Angle1));
+            chart.data.datasets[1].data.push(scaleValue(data.Angle2));
+            chart.data.datasets[2].data.push(scaleValue(data.Angle3));
+            chart.data.datasets[3].data.push(scaleValue(data.Angle4));
+
+            chart.update();
         }
 
         // get sensor data to update the display
@@ -342,22 +340,21 @@
             $.getJSON("/sensor", function(data){
                 // render some html
                 var html = "<p><strong>Accelerometer:</strong><br>" +
-                "X: " + pad(data.accel_x.toFixed(2)) + "<br>" +
-                "Y: " + pad(data.accel_y.toFixed(2)) + "<br>" +
-                "Z: " + pad(data.accel_z.toFixed(2)) + "</p>";
-                html += "<p><strong>Gyroscope:</strong><br>" +
-                "X: " + pad(data.gyro_x.toFixed(2)) + "<br>" +
-                "Y: " + pad(data.gyro_y.toFixed(2)) + "<br>" +
-                "Z: " + pad(data.gyro_z.toFixed(2)) + "</p>";
-
-                $("#sensorData").html(html);
+                           "X: " + (data.accel_x < 0 ? '   ' : '    ') + data.accel_x.toFixed(2) + "<br>" +
+                           "Y: " + (data.accel_y < 0 ? '   ' : '    ') + data.accel_y.toFixed(2) + "<br>" +
+                           "Z: " + (data.accel_z < 0 ? '   ' : '    ') + data.accel_z.toFixed(2) + "</p>";
                 
-                // html = "<p><strong>Angles:</strong><br>" +
-                //         "Angle1: " + pad(data.Angle1.toFixed(2)) + "<br>" +
-                //         "Angle2: " + pad(data.Angle2.toFixed(2)) + "<br>" +
-                //         "Angle3: " + pad(data.Angle3.toFixed(2)) + "<br>" +
-                //         "Angle4: " + pad(data.Angle4.toFixed(2)) + "</p>";
-                // $("#angle-data").html(html);
+                html += "<p><strong>Gyroscope:</strong><br>" +
+                        "X: " + (data.gyro_x < 0 ? '   ' : '    ') + data.gyro_x.toFixed(2) + "<br>" +
+                        "Y: " + (data.gyro_y < 0 ? '   ' : '    ') + data.gyro_y.toFixed(2) + "<br>" +
+                        "Z: " + (data.gyro_z < 0 ? '   ' : '    ') + data.gyro_z.toFixed(2) + "</p>";             
+                
+                html += "<p><strong>Angles:</strong><br>" +
+                        "Wing Right: " + data.Angle1.toFixed(2) + "<br>" +
+                        "Wing Left:  " + data.Angle2.toFixed(2) + "<br>" +
+                        "Roof Right: " + data.Angle4.toFixed(2) + "<br>" +
+                        "Roof Left:  " + data.Angle3.toFixed(2) + "</p>";
+                        $("#sensorData").html(html);
 
                 updateChartData(data)
             });

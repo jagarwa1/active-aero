@@ -19,9 +19,9 @@ def control_third_light(state):
 
 def control_tail_lights(state):
     if state == 1:
-        GPIO.output(15, GPIO.HIGH)
+        GPIO.output(11, GPIO.HIGH)
     elif state == 0:
-        GPIO.output(15, GPIO.LOW)
+        GPIO.output(11, GPIO.LOW)
 
 def control_turbo_lights(state):
     if state == 1:
@@ -39,8 +39,10 @@ def blink_third_light():
 
 if __name__ == "__main__":
     control_tail_lights(1)
-    while True:
-        blink_third_light()
-        time.sleep(1)
+    try:
+        while True:
+            blink_third_light()
+            time.sleep(1)
 
-    GPIO.cleanup()
+    except Exception as e:
+        GPIO.cleanup()

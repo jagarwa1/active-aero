@@ -73,7 +73,7 @@ section {
 
 @media (min-width: 1024px) {
     main {
-        grid-template-columns: 1fr 1fr 1fr; /* Three columns on larger screens */
+        grid-template-columns: 1fr 1.5fr 0.5fr; /* Three columns on larger screens */
     }
 
     h2{

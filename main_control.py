@@ -11,6 +11,7 @@ import argparse
 import smbus2
 import sys
 import os
+import RPi.GPIO as GPIO
 sys.path.append(os.path.expanduser('~/active-aero/lib/python3.11/site-packages'))
 from adafruit_servokit import ServoKit
 
@@ -26,6 +27,50 @@ LOG_DIR = os.path.expanduser('~/active-aero/logs/')
 log_filename = os.path.join(LOG_DIR, f"wing_data_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
 logging_active = False
 
+# LED functions
+GPIO.setmode(GPIO.BOARD)  # Use physical board numbering
+GPIO.setup(11, GPIO.OUT)
+GPIO.setup(13, GPIO.OUT)
+GPIO.setup(15, GPIO.OUT)
+
+# state must be 1 or 0
+def control_third_light(state):
+    if state == 1:
+        GPIO.output(13, GPIO.HIGH)
+    elif state == 0:
+        GPIO.output(13, GPIO.LOW)
+
+def control_tail_lights(state):
+    if state == 1:
+        GPIO.output(15, GPIO.HIGH)
+    elif state == 0:
+        GPIO.output(15, GPIO.LOW)
+
+def control_turbo_lights(state):
+    if state == 1:
+        GPIO.output(11, GPIO.HIGH)
+    elif state == 0:
+        GPIO.output(11, GPIO.LOW)
+
+def brake_lights(state):
+    if state == 1:
+        control_tail_lights(1)
+        control_third_light(1)
+    elif state == 0:
+        control_tail_lights(0)
+        control_third_light(0)
+
+def blink_turbos(x):
+    for i in range(x):
+        control_turbo_lights(1)
+        time.sleep(0.1)
+        control_turbo_lights(0)
+        time.sleep(0.1)
+
+control_tail_lights(0)
+control_third_light(0)
+control_turbo_lights(0)
+
 # Initialize MPU6050
 def init_gyro_accel():
     try:
@@ -37,7 +82,7 @@ def init_gyro_accel():
 
     bus.write_byte_data(MPU6050_ADDR, 0x1C, 0x10)  # change the AFS_SEL to 2
     print("MPU6050_ADDR", hex(MPU6050_ADDR))
-    
+
 # Read raw data from MPU6050
 def read_raw_data(addr):
     high = bus.read_byte_data(MPU6050_ADDR, addr)
@@ -84,13 +129,13 @@ def set_roof_angle(angle3, angle4):
 # control the angle of servo0 
 def set_servo_0(angle):
     try:
-        kit.servo[0].angle = 180 - angle
+        kit.servo[0].angle = angle
     except Exception as e: print("Error setting servo0 angle:", e)
 
 # control the angle of servo1
 def set_servo_1(angle):
     try:
-        kit.servo[1].angle = angle
+        kit.servo[1].angle = 180 - angle
     except Exception as e: print("Error setting servo1 angle:", e)
 
 # control the angle of servo1
@@ -263,6 +308,9 @@ class WingControlGUI(tk.Tk):
 
 def bootcal():
     print("calibrating...")
+    set_wing_angle(180, 180)
+    control_turbo_lights(1)
+
     CalSamples = 100
     accel_x_cal = [j for j in range(CalSamples)] 
     accel_y_cal = [j for j in range(CalSamples)] 
@@ -291,10 +339,17 @@ def bootcal():
     print(gyro_x_offset)
     print(gyro_y_offset)
     print(gyro_z_offset)
+    
     print('Calibration Complete')
     time.sleep(1)
+    set_wing_angle(0, 0)
+    control_turbo_lights(0)
+    blink_turbos(3) # blink turbos 3 times
+
     return accel_x_offset,accel_y_offset,accel_z_offset,gyro_x_offset,gyro_y_offset,gyro_z_offset
-    
+
+# priority 0: forward accel priority
+# priority 1: lateral accel priority
 def PriorityDefine(accel_x_offset,accel_y_offset):
     accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z = get_sensor_data()
     accel_x = accel_x - accel_x_offset
@@ -310,17 +365,17 @@ def WingMove(accel_x, accel_y, priority):
     match priority:
         case 0:
         # Make Accel Force Graph, log data for Min-Max and develop function
-            WingAngle = math.floor(110 * round(accel_x,4))
+            WingAngle = math.floor(160 * round(accel_x,4))
             if WingAngle >= 180:
                 WingAngle = 180
             elif WingAngle <= 0:
                 WingAngle = 0
-            
+
             if WingAngle >= 100:
                 HoodAngle = 180
             else:
                 HoodAngle = 0
-                
+
             set_servo_angle(WingAngle, WingAngle, HoodAngle, HoodAngle)
             Angle1 = WingAngle
             Angle2 = WingAngle
@@ -329,19 +384,19 @@ def WingMove(accel_x, accel_y, priority):
 
         case 1:
         # Make Accel Force Graph, log data for Min-Max and develop function
-            WingAngleY = math.floor(110 * round(accel_y, 4))
+            WingAngleY = math.floor(160 * round(accel_y, 4))
             WingAngleY2 = -WingAngleY
 
             if WingAngleY >= 180:
                 WingAngleY = 180
             elif WingAngleY <= 0:
                 WingAngleY = 0
-            
+
             if WingAngleY2 >= 180:
                 WingAngleY2 = 180
             elif WingAngleY2 <= 0:
                 WingAngleY2 = 0
-            
+
             HoodAngle = 0
             set_servo_angle(WingAngleY, WingAngleY2, HoodAngle, HoodAngle)
             Angle1 = WingAngleY
@@ -349,9 +404,15 @@ def WingMove(accel_x, accel_y, priority):
             Angle3 = HoodAngle
             Angle4 = HoodAngle
 
-    return Angle1, Angle2, Angle3, Angle4	
+    # turn on brake lights
+    if Angle3 > 120 or Angle4 > 120:
+        brake_lights(1)
+        time.sleep(0.2)
+    else:
+        brake_lights(0)
 
-    
+    return Angle1, Angle2, Angle3, Angle4
+ 
 # Main function
 if __name__ == "__main__":
     try:
@@ -392,5 +453,5 @@ if __name__ == "__main__":
         pass
     finally:
         print("\n\nstopping execution\n\n")
-        #set_servo_angle(180)
-        #GPIO.cleanup()
+        set_servo_angle(0, 0, 0, 0)
+        GPIO.cleanup()
